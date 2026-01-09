@@ -16,7 +16,7 @@ The goal is to build a **Task Assignment & Activity Tracking System** with stron
 ---
 
 ## Project Structure (Mandatory)
-
+```
 fullstack-assessment/
 │
 ├── README.md
@@ -36,6 +36,7 @@ fullstack-assessment/
     ├── Dockerfile
     └── init.sql
 
+```
 
 Each folder must contain its own `Dockerfile`.
 
@@ -132,3 +133,4 @@ Include answers to the following in your README:
 4. What would you improve for production?
 
 ---
+Once you complete the project push on the same repo
