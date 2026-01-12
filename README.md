@@ -186,7 +186,7 @@ This approach avoids over-engineering with NgRx for this small-to-medium scale a
 ## What would you improve for production?
 
 1. Implement WebSocket updates to keep all clients in sync in real-time.
-2. Use a global state management solution like NgRx or Akita if the app scales further
+2. Use a global state management solution like NgRx if the app scales further
 3. Add unit and integration tests for components and services, especially for concurrency and versioning logic.
 4. Add audit and security checks on the backend to ensure only authorized users can update or view tasks.
 
