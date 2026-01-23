@@ -18,7 +18,7 @@ services:
     container_name: api_challenge_server
     restart: on-failure
     ports:
-      - "3000:3000"
+      - "5000:5000"
     environment:
       DB_HOST: database
       DB_PORT: 5432
