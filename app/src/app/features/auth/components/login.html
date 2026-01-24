@@ -1,0 +1,43 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
+  <form
+    #loginForm="ngForm"
+    (ngSubmit)="login(loginForm)"
+    class="bg-white p-6 rounded-lg shadow w-full max-w-sm space-y-4"
+  >
+    <h2 class="text-xl font-bold text-center">Login</h2>
+
+    <!-- Email -->
+    <input
+      [(ngModel)]="email"
+      name="email"
+      type="email"
+      placeholder="Email"
+      required
+      class="w-full border px-3 py-2 rounded"
+    />
+    <div *ngIf="loginForm.submitted && !email" class="text-red-500 text-sm">Email is required.</div>
+
+    <!-- Password -->
+    <input
+      [(ngModel)]="password"
+      name="password"
+      type="password"
+      placeholder="Password"
+      required
+      class="w-full border px-3 py-2 rounded"
+    />
+    <div *ngIf="loginForm.submitted && !password" class="text-red-500 text-sm">
+      Password is required.
+    </div>
+
+    <!-- Submit Button -->
+    <button
+      type="submit"
+      [disabled]="loading()"
+      class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <span *ngIf="!loading()">Login</span>
+      <span *ngIf="loading()">Logging in...</span>
+    </button>
+  </form>
+</div>

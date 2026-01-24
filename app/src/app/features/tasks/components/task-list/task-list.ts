@@ -70,7 +70,7 @@ export class TaskListComponent implements OnInit {
       await this.taskService.createTask({
         title: this.newTaskTitle,
         description: this.newTaskDescription,
-        assigned_to: this.newTaskAssignedTo,
+        assigned_user_id: this.newTaskAssignedTo,
       });
 
       this.taskService.loadTasks();
@@ -94,7 +94,7 @@ export class TaskListComponent implements OnInit {
 
   openAssignModal(task: Task) {
     this.selectedTask.set(task);
-    this.selectedUserId.set(task.assigned_user_id ?? null);
+    this.selectedUserId.set(task?.assignedUser?.id ?? null);
     this.assignError.set(null);
     this.showAssignModal.set(true);
   }
@@ -216,7 +216,7 @@ export class TaskListComponent implements OnInit {
       if (error.message?.includes('optimistic lock')) {
         this.notify.errorAlert(
           'This task was modified by someone else. Please refresh and try again.',
-          'Concurrent Modification'
+          'Concurrent Modification',
         );
       } else {
         this.notify.errorAlert(error?.message || 'Failed to update status');
@@ -247,7 +247,7 @@ export class TaskListComponent implements OnInit {
       const updated = await this.taskService.assignTask(
         task.id,
         userId ? Number(userId) : null,
-        task.version
+        task.version,
       );
 
       this.taskService.loadTasks();

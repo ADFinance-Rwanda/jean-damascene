@@ -34,8 +34,8 @@ export class TaskService {
         this.api.get<TaskListResponse>('tasks').pipe(
           catchError((error: HttpErrorResponse) => {
             return this.handleHttpError(error);
-          })
-        )
+          }),
+        ),
       );
       this.tasks.set(res.data.tasks);
       this.metrics.set(res.data.metrics);
@@ -44,13 +44,13 @@ export class TaskService {
     }
   }
 
-  createTask(data: { title: string; description?: string; assigned_to?: number | null }) {
+  createTask(data: { title: string; description?: string; assigned_user_id?: number | null }) {
     return firstValueFrom(
       this.api.post('tasks', data).pipe(
         catchError((error: HttpErrorResponse) => {
           return this.handleHttpError(error);
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -59,8 +59,8 @@ export class TaskService {
       this.api.put(`tasks/${id}`, { ...data, version }).pipe(
         catchError((error: HttpErrorResponse) => {
           return this.handleHttpError(error);
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -69,8 +69,8 @@ export class TaskService {
       this.api.put(`tasks/${id}/status`, { ...data }).pipe(
         catchError((error: HttpErrorResponse) => {
           return this.handleHttpError(error);
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -79,8 +79,8 @@ export class TaskService {
       this.api.put(`tasks/${id}/status`, { ...data }).pipe(
         catchError((error: HttpErrorResponse) => {
           return this.handleHttpError(error);
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -94,8 +94,8 @@ export class TaskService {
         .pipe(
           catchError((error: HttpErrorResponse) => {
             return this.handleHttpError(error);
-          })
-        )
+          }),
+        ),
     );
   }
 
@@ -105,8 +105,8 @@ export class TaskService {
         this.api.get<TaskHistoryResponse>(`tasks/${taskId}`).pipe(
           catchError((error: HttpErrorResponse) => {
             return this.handleHttpError(error);
-          })
-        )
+          }),
+        ),
       );
       return response.data.activity_logs.map(this.mapActivity);
     } catch (error: any) {
@@ -119,8 +119,8 @@ export class TaskService {
       this.api.delete(`tasks/${id}`).pipe(
         catchError((error: HttpErrorResponse) => {
           return this.handleHttpError(error);
-        })
-      )
+        }),
+      ),
     );
   }
 

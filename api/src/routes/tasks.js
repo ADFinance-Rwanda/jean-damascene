@@ -9,8 +9,12 @@ import {
     deleteTaskController
 } from '../controllers/taskController.js';
 import { validate } from '../middleware/validate.js';
+import { verifyUserToken } from '../middleware/verifyUserToken.js';
+import { authorize } from '../middleware/authorize.js';
 
 const router = express.Router();
+
+router.use(verifyUserToken);
 
 /**
  * @swagger
@@ -23,6 +27,8 @@ const router = express.Router();
  * @swagger
  * /api/tasks:
  *   post:
+ *     security:
+ *       - BearerAuth: []
  *     summary: Create a new task
  *     tags: [Tasks]
  *     requestBody:
@@ -39,7 +45,7 @@ const router = express.Router();
  *                 type: string
  *               description:
  *                 type: string
- *               assigned_to:
+ *               assigned_user_id:
  *                 type: integer
  *                 nullable: true
  *     responses:
@@ -52,6 +58,7 @@ const router = express.Router();
  */
 router.post(
     '/',
+    authorize("ADMIN"),
     validate(['title', 'description']),
     createTaskController
 );
@@ -60,6 +67,8 @@ router.post(
  * @swagger
  * /api/tasks:
  *   get:
+ *     security:
+ *       - BearerAuth: []
  *     summary: Get all tasks
  *     tags: [Tasks]
  *     responses:
@@ -78,6 +87,8 @@ router.get('/', getAllTasksController);
  * @swagger
  * /api/tasks/{id}:
  *   get:
+ *     security:
+ *       - BearerAuth: []
  *     summary: Get task by ID
  *     tags: [Tasks]
  *     parameters:
@@ -101,6 +112,8 @@ router.get('/:id', getTaskByIdController);
  * @swagger
  * /api/tasks/{id}:
  *   put:
+ *     security:
+ *       - BearerAuth: []
  *     summary: Update task details
  *     tags: [Tasks]
  *     parameters:
@@ -130,12 +143,17 @@ router.get('/:id', getTaskByIdController);
  *             schema:
  *               $ref: '#/components/schemas/Task'
  */
-router.put('/:id', validate(['title', 'description']), updateTaskController);
+router.put('/:id',
+    // authorize("ADMIN"),
+    validate(['title', 'description']),
+    updateTaskController);
 
 /**
  * @swagger
  * /api/tasks/{id}/status:
  *   put:
+ *     security:
+ *       - BearerAuth: []
  *     summary: Update task status
  *     tags: [Tasks]
  *     parameters:
@@ -170,6 +188,8 @@ router.put('/:id/status', validate(['status', 'version']), updateTaskStatusContr
  * @swagger
  * /api/tasks/{id}/assign:
  *   put:
+ *     security:
+ *       - BearerAuth: []
  *     summary: Assign task to user
  *     tags: [Tasks]
  *     parameters:
@@ -204,6 +224,8 @@ router.put('/:id/assign', validate(['user_id', 'version']), assignTaskToUserCont
  * @swagger
  * /api/tasks/{id}:
  *   delete:
+ *     security:
+ *       - BearerAuth: []
  *     summary: Delete task
  *     tags: [Tasks]
  *     parameters:
@@ -216,6 +238,6 @@ router.put('/:id/assign', validate(['user_id', 'version']), assignTaskToUserCont
  *       204:
  *         description: Task deleted successfully
  */
-router.delete('/:id', deleteTaskController);
+router.delete('/:id', authorize("ADMIN"), deleteTaskController);
 
 export default router;

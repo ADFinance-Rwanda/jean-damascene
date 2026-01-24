@@ -20,15 +20,25 @@ import {
 export const createTaskController = asyncHandler(async (req, res) => {
     const { title, description, assigned_user_id } = toCreateTaskDto(req.body);
 
-    const task = await createTask(title, description, assigned_user_id);
+    const created_by = req.user.id;
+
+    const task = await createTask(
+        title,
+        description,
+        created_by,
+        assigned_user_id
+    );
+
     return sendSuccess(res, task, 'Task created successfully', 201);
 });
 
+
 /* ================= Get all tasks ===============*/
-export const getAllTasksController = asyncHandler(async (_req, res) => {
-    const tasks = await getAllTasks();
-    return sendSuccess(res, tasks, 'Tasks retrieved successfully');
+export const getAllTasksController = asyncHandler(async (req, res) => {
+    const result = await getAllTasks(req.user);
+    return sendSuccess(res, result, 'Tasks retrieved successfully');
 });
+
 
 /* ================= Get single task by ID ===============*/
 export const getTaskByIdController = asyncHandler(async (req, res) => {
@@ -37,16 +47,22 @@ export const getTaskByIdController = asyncHandler(async (req, res) => {
 });
 
 /* ================= Update task details (title, description)===============*/
+// export const updateTaskController = asyncHandler(async (req, res) => {
+//     const { title, description } = toUpdateTaskByIdDto(req.body);
+//     const task = await updateTask(req.params.id, { title, description }, req.body.version, req.user);
+//     return sendSuccess(res, task, 'Task updated successfully');
+// });
+
 export const updateTaskController = asyncHandler(async (req, res) => {
-    const { title, description } = toUpdateTaskByIdDto(req.body);
-    const task = await updateTask(req.params.id, { title, description });
+    const { title, description, newComment } = toUpdateTaskByIdDto(req.body);
+    const task = await updateTask(req.params.id, { title, description, newComment }, req.body.version, req.user);
     return sendSuccess(res, task, 'Task updated successfully');
 });
 
 /* ================= Update task status ===============*/
 export const updateTaskStatusController = asyncHandler(async (req, res) => {
     const { status, version } = toUpdateTaskDto(req.body);
-    const task = await updateTaskStatus(req.params.id, status, version);
+    const task = await updateTaskStatus(req.params.id, status, version, req.user);
     if (task instanceof AppError) {
         return sendError(res, task, task.status);
     }
@@ -57,12 +73,12 @@ export const updateTaskStatusController = asyncHandler(async (req, res) => {
 /* ================= Assign task to user ===============*/
 export const assignTaskToUserController = asyncHandler(async (req, res) => {
     const { user_id, version } = toAssignTaskDto(req.body);
-    const task = await assignTaskToUser(req.params.id, user_id, version);
+    const task = await assignTaskToUser(req.params.id, user_id, version, req.user);
     return sendSuccess(res, task, 'Task assigned to user successfully');
 });
 
 /* ================= Delete task ===============*/
 export const deleteTaskController = asyncHandler(async (req, res) => {
-    await deleteTask(req.params.id);
+    await deleteTask(req.params.id, req.user);
     return sendSuccess(res, null, 'Task deleted successfully');
 });

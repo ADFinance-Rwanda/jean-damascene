@@ -1,22 +1,26 @@
 export type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'DONE';
 
+export interface TaskUser {
+  id: number;
+  name: string;
+  email: string;
+}
+
 export interface Task {
   id: number;
   title: string;
   description?: string;
   status: TaskStatus;
 
-  assigned_user_id?: number | null;
-  assigned_user_name?: string | null;
-  assigned_user_email?: string | null;
+  assignedUser?: TaskUser | null;
+  createdBy?: TaskUser | null;
 
-  created_at: string; // ISO string from backend
-  updated_at: string; // ISO string from backend
+  created_at: string;
+  updated_at: string;
 
-  version: number; // optional if backend sends it
+  version: number;
 }
 
-/* Optional – if you want metrics */
 export interface TaskMetrics {
   total: number;
   open: number;
@@ -34,14 +38,6 @@ export interface Activity {
   createdAt: Date;
 }
 
-// export interface Activity {
-//   id: number;
-//   taskId: number;
-//   actionType: string;
-//   oldValue: string | null;
-//   newValue: string | null;
-//   createdAt: Date;
-// }
 export interface TaskHistoryResponse {
   success: boolean;
   message: string;

@@ -1,25 +1,53 @@
 import pool from '../db/pool.js';
 import { AppError } from '../utils/response.js';
+import bcrypt from "bcrypt";
+import { generateToken } from '../utils/token.js';
+import { verifyUserToken } from '../middleware/verifyUserToken.js';
 
 
-export const createUser = async (name, email) => {
-    // First check if email already exists
+// export const createUser = async (name, email) => {
+//     // First check if email already exists
+//     const { rows: existingUsers } = await pool.query(
+//         'SELECT id FROM users WHERE email = $1',
+//         [email]
+//     );
+
+//     if (existingUsers.length > 0) {
+//         throw new AppError('Email already exists', 409); // 409 Conflict
+//     }
+
+//     // If email doesn't exist, create the user
+//     const { rows } = await pool.query(
+//         'INSERT INTO users(name, email) VALUES($1, $2) RETURNING *',
+//         [name, email]
+//     );
+//     return rows[0];
+// };
+
+export const createUser = async (name, email, password, role = "USER") => {
+    // Check if email exists
     const { rows: existingUsers } = await pool.query(
-        'SELECT id FROM users WHERE email = $1',
+        "SELECT id FROM users WHERE email = $1",
         [email]
     );
 
-    if (existingUsers.length > 0) {
-        throw new AppError('Email already exists', 409); // 409 Conflict
+    if (existingUsers.length) {
+        throw new AppError("Email already exists", 409);
     }
 
-    // If email doesn't exist, create the user
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const { rows } = await pool.query(
-        'INSERT INTO users(name, email) VALUES($1, $2) RETURNING *',
-        [name, email]
+        `INSERT INTO users(name, email, password, role)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, name, email, role, created_at`,
+        [name, email, hashedPassword, role]
     );
+
     return rows[0];
 };
+
 
 export const getUsers = async () => {
     const { rows } = await pool.query(`
@@ -63,4 +91,47 @@ export const deleteUser = async (id) => {
     const { rowCount } = await pool.query('DELETE FROM users WHERE id=$1', [id]);
     if (!rowCount) throw new AppError('User not found', 404);
     return true;
+};
+
+export const loginUser = async (email, password) => {
+    // 1. Find user by email
+    const { rows } = await pool.query(
+        `SELECT id, name, email, password, role 
+         FROM users 
+         WHERE email = $1`,
+        [email]
+    );
+
+    if (!rows.length) {
+        throw new AppError("Invalid credentials", 401);
+    }
+
+    const user = rows[0];
+
+    // 2. Compare passwords
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+        throw new AppError("Invalid credentials", 401);
+    }
+
+    // 3. Create session payload (what goes into JWT)
+    const session = {
+        userId: user.id,
+        role: user.role,
+        email: user.email
+    };
+
+    // 4. Generate encrypted JWT
+    const token = await generateToken(session);
+
+    // 5. Return safe user data
+    return {
+        user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+        },
+        token
+    };
 };

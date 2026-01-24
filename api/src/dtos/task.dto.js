@@ -24,13 +24,13 @@ export const toUpdateTaskDto = (body) => {
 
 
 export const toUpdateTaskByIdDto = (body) => {
-    const { title, description } = body;
+    const { title, description, newComment } = body;
 
     if (!title || !description) {
         throw new Error('title and description are required');
     }
 
-    return { title, description };
+    return { title, description, newComment };
 };
 
 export const toAssignTaskDto = (body) => {
