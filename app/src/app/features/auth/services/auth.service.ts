@@ -1,12 +1,12 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../core/api/api.service';
-import { SocketService } from '../../../core/sockets/SocketService';
 
 export interface User {
   id: number;
   name: string;
   email: string;
+  role: 'ADMIN' | 'USER';
 }
 
 interface LoginResponse {
@@ -15,6 +15,11 @@ interface LoginResponse {
     user: User;
     token: string;
   };
+}
+
+interface MeResponse {
+  success: boolean;
+  data: User;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -28,6 +33,10 @@ export class AuthService {
 
   isAuthenticated = computed(() => !!this.token());
 
+  // 👇 role helpers
+  isAdmin = computed(() => this.user()?.role === 'ADMIN');
+  isUser = computed(() => this.user()?.role === 'USER');
+
   constructor(private api: ApiService) {}
 
   async restoreSession() {
@@ -39,8 +48,8 @@ export class AuthService {
     }
 
     try {
-      const user = await firstValueFrom(this.api.get<User>('users/me'));
-      this.user.set(user);
+      const res = await firstValueFrom(this.api.get<MeResponse>('users/me'));
+      this.user.set(res.data);
     } catch {
       this.logout();
     } finally {
@@ -52,7 +61,10 @@ export class AuthService {
     const res = await firstValueFrom(
       this.api.post<LoginResponse>('users/login', { email, password }),
     );
-    this.setSession(res.data.user, res.data.token);
+
+    this.setSession(res.data.token);
+
+    await this.restoreSession();
   }
 
   logout() {
@@ -61,8 +73,7 @@ export class AuthService {
     localStorage.removeItem(this.TOKEN_KEY);
   }
 
-  private setSession(user: User, token: string) {
-    this.user.set(user);
+  private setSession(token: string) {
     this.token.set(token);
     localStorage.setItem(this.TOKEN_KEY, token);
   }

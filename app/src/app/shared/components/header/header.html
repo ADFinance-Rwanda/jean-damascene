@@ -1,0 +1,65 @@
+<header class="bg-gray-800 text-white p-4 flex justify-between">
+  <div class="flex items-center justify-between w-full max-w-7xl mx-auto py-1">
+    <!-- Logo -->
+    <div class="flex items-center space-x-3">
+      <img src="/logo.png" alt="Task Tracker Logo" class="h-9 w-auto rounded-full object-cover" />
+      <span class="font-bold text-lg">Task Tracker</span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="space-x-4 flex items-center">
+      <a
+        routerLink="/tasks"
+        routerLinkActive="text-blue-400 font-semibold"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="hover:underline transition-colors"
+      >
+        Tasks
+      </a>
+      <a
+        routerLink="/users"
+        routerLinkActive="text-blue-400 font-semibold"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="hover:underline transition-colors"
+      >
+        {{ auth.isAdmin() ? 'Users' : 'Profile' }}
+      </a>
+    </nav>
+
+    <!-- User Info / Dropdown -->
+    <div class="relative ml-4">
+      <button
+        class="dropdown-button flex items-center gap-2 px-3 py-1 rounded transition-colors"
+        (click)="toggleDropdown()"
+      >
+        <div
+          class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-lg"
+        >
+          {{ auth.user()?.name?.charAt(0)?.toUpperCase() || 'U' }}
+        </div>
+        <div class="flex flex-col space-y-1 text-start">
+          <span class="capitalize text-sm -mb-1">{{ auth.user()?.name }}</span>
+          <span class="capitalize text-xs text-blue-400">{{ auth.user()?.role }}</span>
+        </div>
+      </button>
+
+      <!-- Dropdown -->
+      @if (showDropdown()) {
+        <div
+          class="dropdown-container absolute right-0 mt-2 w-48 bg-white text-gray-900 rounded shadow-lg z-50 border border-gray-200"
+        >
+          <div class="px-4 py-2 border-b border-gray-200">
+            <p class="font-semibold capitalize">{{ auth.user()?.name }}</p>
+            <p class="text-sm text-gray-500">{{ auth.user()?.email }}</p>
+          </div>
+          <button
+            class="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors"
+            (click)="logout()"
+          >
+            Logout
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</header>

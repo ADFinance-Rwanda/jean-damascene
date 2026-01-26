@@ -17,8 +17,8 @@ export class UserService {
         this.api.get<UserListResponse>('users').pipe(
           catchError((error: HttpErrorResponse) => {
             return this.handleHttpError(error);
-          })
-        )
+          }),
+        ),
       );
       return response.data;
     } catch (error: any) {
@@ -33,8 +33,8 @@ export class UserService {
         this.api.get<UserSingleResponse>(`users/${id}`).pipe(
           catchError((error: HttpErrorResponse) => {
             return this.handleHttpError(error);
-          })
-        )
+          }),
+        ),
       );
       return response.data;
     } catch (error: any) {
@@ -43,14 +43,19 @@ export class UserService {
   }
 
   /* ---------- CREATE ---------- */
-  async createUser(data: { name: string; email: string }): Promise<User> {
+  async createUser(data: {
+    name: string;
+    email: string;
+    role: string;
+    password: string;
+  }): Promise<User> {
     try {
       const response = await firstValueFrom(
         this.api.post<UserSingleResponse>('users', data).pipe(
           catchError((error: HttpErrorResponse) => {
             return this.handleHttpError(error);
-          })
-        )
+          }),
+        ),
       );
       return response.data;
     } catch (error: any) {
@@ -59,14 +64,14 @@ export class UserService {
   }
 
   /* ---------- UPDATE ---------- */
-  async updateUser(id: number, data: { name: string; email: string }): Promise<User> {
+  async updateUser(id: number, data: { name: string; email: string; role: string }): Promise<User> {
     try {
       const response = await firstValueFrom(
         this.api.put<UserSingleResponse>(`users/${id}`, data).pipe(
           catchError((error: HttpErrorResponse) => {
             return this.handleHttpError(error);
-          })
-        )
+          }),
+        ),
       );
       return response.data;
     } catch (error: any) {
@@ -81,8 +86,8 @@ export class UserService {
         this.api.delete(`users/${id}`).pipe(
           catchError((error: HttpErrorResponse) => {
             return this.handleHttpError(error);
-          })
-        )
+          }),
+        ),
       );
     } catch (error: any) {
       throw error;

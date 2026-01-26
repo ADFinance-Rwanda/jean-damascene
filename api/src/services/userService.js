@@ -55,6 +55,7 @@ export const getUsers = async () => {
             u.id,
             u.name,
             u.email,
+            u.role,
             u.created_at,
             COUNT(t.id) AS total_tasks,
             COUNT(t.id) FILTER (WHERE t.status='IN_PROGRESS') AS in_progress_tasks,
@@ -78,10 +79,10 @@ export const getUserById = async (id) => {
     return rows[0];
 };
 
-export const updateUser = async (id, { name, email }) => {
+export const updateUser = async (id, { name, email, role }) => {
     const { rows } = await pool.query(
-        'UPDATE users SET name=$1, email=$2 WHERE id=$3 RETURNING *',
-        [name, email, id]
+        'UPDATE users SET name=$1, email=$2, role=$3 WHERE id=$4 RETURNING *',
+        [name, email, role, id]
     );
     if (!rows.length) throw new AppError('User not found', 404);
     return rows[0];
@@ -126,12 +127,6 @@ export const loginUser = async (email, password) => {
 
     // 5. Return safe user data
     return {
-        user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role
-        },
         token
     };
 };

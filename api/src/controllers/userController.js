@@ -11,10 +11,21 @@ export const createUserController = asyncHandler(async (req, res) => {
 });
 
 /* ================= Get all users ===============*/
-export const getUsersController = asyncHandler(async (_req, res) => {
-    const users = await getUsers();
+export const getUsersController = asyncHandler(async (req, res) => {
+    const { role, id: userId } = req.user;
+
+    let users;
+
+    if (role === 'ADMIN') {
+        users = await getUsers();
+    } else {
+        const allUsers = await getUsers();
+        users = allUsers.filter(u => u.id === userId);
+    }
+
     return sendSuccess(res, users, 'Users retrieved successfully');
 });
+
 
 /* ================= Get single user by ID ===============*/
 export const getUserByIdController = asyncHandler(async (req, res) => {
@@ -24,8 +35,8 @@ export const getUserByIdController = asyncHandler(async (req, res) => {
 
 /* ================= Update user by ID ===============*/
 export const updateUserController = asyncHandler(async (req, res) => {
-    const { name, email } = toUpdateUserDto(req.body);
-    const user = await updateUser(req.params.id, { name, email });
+    const { name, email, role } = toUpdateUserDto(req.body);
+    const user = await updateUser(req.params.id, { name, email, role });
     return sendSuccess(res, user, 'User updated successfully');
 });
 

@@ -1,41 +1,50 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../../features/auth/services/auth.service';
+import { NgIf } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
-  template: `
-    <header class="bg-gray-800 text-white p-4 flex justify-between">
-      <div class="flex items-center justify-between w-full max-w-7xl mx-auto py-1">
-        <div class="flex items-center space-x-3">
-          <img
-            src="/logo.png"
-            alt="Task Tracker Logo"
-            class="h-9 w-auto rounded-full object-cover"
-          />
-          <span class="font-bold text-lg">Task Tracker</span>
-        </div>
-        <nav class="space-x-4">
-          <a
-            routerLink="/tasks"
-            routerLinkActive="text-blue-400 font-semibold"
-            [routerLinkActiveOptions]="{ exact: true }"
-            class="hover:underline transition-colors"
-          >
-            Tasks
-          </a>
-          <a
-            routerLink="/users"
-            routerLinkActive="text-blue-400 font-semibold"
-            [routerLinkActiveOptions]="{ exact: true }"
-            class="hover:underline transition-colors"
-          >
-            Users
-          </a>
-        </nav>
-      </div>
-    </header>
-  `,
+  imports: [RouterLink, RouterLinkActive, NgIf],
+  templateUrl: './header.html',
 })
-export class HeaderComponent {}
+export class HeaderComponent {
+  auth = inject(AuthService);
+  showDropdown = signal(false);
+  private router = inject(Router);
+
+  toggleDropdown() {
+    this.showDropdown.set(!this.showDropdown());
+  }
+
+  logout() {
+    this.auth.logout();
+    this.router.navigate(['/login']);
+  }
+
+  // Close dropdown when clicking outside
+  onDocumentClick(event: MouseEvent) {
+    const dropdownElement = document.querySelector('.dropdown-container');
+    const buttonElement = document.querySelector('.dropdown-button');
+
+    if (
+      dropdownElement &&
+      buttonElement &&
+      !dropdownElement.contains(event.target as Node) &&
+      !buttonElement.contains(event.target as Node)
+    ) {
+      this.showDropdown.set(false);
+    }
+  }
+
+  // Initialize click outside listener
+  ngOnInit() {
+    document.addEventListener('click', this.onDocumentClick.bind(this));
+  }
+
+  ngOnDestroy() {
+    document.removeEventListener('click', this.onDocumentClick.bind(this));
+  }
+}

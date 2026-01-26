@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { UserService } from '../../services/user.service';
 import { User } from '../../models/user.model';
 import { NotificationService } from '../../../../core/toastify';
+import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
   selector: 'app-user-list',
@@ -13,7 +14,8 @@ import { NotificationService } from '../../../../core/toastify';
 })
 export class UserListComponent implements OnInit {
   private userService = inject(UserService);
-  private notify = inject(NotificationService); // Inject notification service
+  private notify = inject(NotificationService);
+  public auth = inject(AuthService);
 
   users = signal<User[]>([]);
   isLoading = signal(true);
@@ -26,6 +28,8 @@ export class UserListComponent implements OnInit {
 
   name = '';
   email = '';
+  role = 'USER';
+  password = '';
 
   async ngOnInit() {
     await this.loadUsers();
@@ -50,6 +54,8 @@ export class UserListComponent implements OnInit {
     this.selectedUserId.set(null);
     this.name = '';
     this.email = '';
+    this.password = '';
+    this.role = 'USER';
     this.showModal.set(true);
   }
 
@@ -59,6 +65,7 @@ export class UserListComponent implements OnInit {
     this.selectedUserId.set(user.id);
     this.name = user.name;
     this.email = user.email;
+    this.role = user.role;
     this.showModal.set(true);
   }
 
@@ -72,12 +79,15 @@ export class UserListComponent implements OnInit {
         await this.userService.updateUser(this.selectedUserId()!, {
           name: this.name,
           email: this.email,
+          role: this.role,
         });
         this.notify.success('User updated successfully!');
       } else {
         await this.userService.createUser({
           name: this.name,
           email: this.email,
+          role: this.role,
+          password: this.password,
         });
         this.notify.success('User created successfully!');
       }
