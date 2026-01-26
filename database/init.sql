@@ -39,7 +39,7 @@ CREATE TABLE notifications (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     task_id INT REFERENCES tasks(id) ON DELETE CASCADE,
-    type VARCHAR(50) NOT NULL,          -- e.g., 'TASK_ASSIGNED', 'TASK_UPDATED'
+    type VARCHAR(50) NOT NULL,          -- e.g., 'task_assigned', 'task_updated'
     message TEXT NOT NULL,              -- notification content
     is_read BOOLEAN DEFAULT FALSE,      -- unread by default
     created_at TIMESTAMP DEFAULT NOW()

@@ -54,7 +54,7 @@ export class TaskService {
     );
   }
 
-  updateTask(id: number, data: { title: string; description?: string }, version?: number) {
+  updateTask(id: number, data: { title: string; description?: string }, version: number) {
     return firstValueFrom(
       this.api.put(`tasks/${id}`, { ...data, version }).pipe(
         catchError((error: HttpErrorResponse) => {

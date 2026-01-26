@@ -4,7 +4,7 @@ import { AppError } from '../utils/response.js';
 /**
  * Create a notification
  * @param {number} userId - recipient user ID
- * @param {string} type - notification type (TASK_ASSIGNED, TASK_UPDATED, etc.)
+ * @param {string} type - notification type (task_assigned, task_updated, etc.)
  * @param {string} message - content of the notification
  * @param {number} taskId - optional, related task
  */

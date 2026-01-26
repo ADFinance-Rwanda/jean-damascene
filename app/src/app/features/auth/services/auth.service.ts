@@ -1,6 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../../core/api/api.service';
+import { SocketService } from '../../../core/sockets/SocketService';
 
 export interface User {
   id: number;
@@ -15,6 +16,7 @@ interface LoginResponse {
     token: string;
   };
 }
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly TOKEN_KEY = 'token';
