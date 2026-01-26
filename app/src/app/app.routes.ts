@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './features/auth/components/login';
 import { authGuard } from './core/auth/auth.guard';
+import { TaskDetailComponent } from './features/tasks/components/task-detail/task-detail';
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
 
@@ -16,6 +17,7 @@ export const routes: Routes = [
             (m) => m.TaskListComponent,
           ),
       },
+      { path: 'task/:id', component: TaskDetailComponent },
       {
         path: 'users',
         loadComponent: () =>

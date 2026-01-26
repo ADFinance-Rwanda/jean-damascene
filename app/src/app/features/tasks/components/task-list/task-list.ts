@@ -8,13 +8,14 @@ import { User } from '../../../users/models/user.model';
 import { NotificationService } from '../../../../core/toastify';
 import { SocketService } from '../../../../core/sockets/SocketService';
 import { Subscription } from 'rxjs';
+import { RouterModule } from '@angular/router';
 
 type FilterStatus = 'ALL' | TaskStatus;
 
 @Component({
   selector: 'app-task-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './task-list.html',
 })
 export class TaskListComponent implements OnInit, OnDestroy {
@@ -100,6 +101,10 @@ export class TaskListComponent implements OnInit, OnDestroy {
   newTaskTitle = '';
   newTaskDescription = '';
   newTaskAssignedTo: number | null = null;
+  newTaskDeadline: string | null = null;
+  newTaskComment = '';
+
+  today = new Date().toISOString().split('T')[0];
 
   openCreateModal() {
     this.showCreateModal.set(true);
@@ -107,26 +112,25 @@ export class TaskListComponent implements OnInit, OnDestroy {
 
   closeCreateModal() {
     this.showCreateModal.set(false);
+    this.newTaskTitle = '';
+    this.newTaskDescription = '';
+    this.newTaskAssignedTo = null;
+    this.newTaskDeadline = null;
+    this.newTaskComment = '';
   }
 
   async createTask() {
-    if (!this.newTaskTitle.trim()) {
-      this.notify.warningAlert('Please enter a task title');
-      return;
-    }
-
     try {
       await this.taskService.createTask({
         title: this.newTaskTitle,
         description: this.newTaskDescription,
         assigned_user_id: this.newTaskAssignedTo,
+        deadline: this.newTaskDeadline ? new Date(this.newTaskDeadline).toISOString() : null,
+
+        comment: this.newTaskComment || null,
       });
 
       await this.taskService.loadTasks();
-
-      this.newTaskTitle = '';
-      this.newTaskDescription = '';
-      this.newTaskAssignedTo = null;
       this.closeCreateModal();
 
       this.notify.success('Task created successfully!');
@@ -196,6 +200,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
         {
           title: task.title,
           description: task.description,
+          deadline: task.deadline || null,
         },
         task.version,
       );
@@ -343,6 +348,56 @@ export class TaskListComponent implements OnInit, OnDestroy {
       }
     }
     return value;
+  }
+
+  getRemainingInfo(deadline?: string | Date | null) {
+    if (!deadline) {
+      return { label: ' ', class: 'text-gray-400' };
+    }
+
+    const today = new Date();
+    const end = new Date(deadline);
+
+    today.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Overdue
+    if (diffDays < 0) {
+      return {
+        label: `Overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays) > 1 ? 's' : ''}`,
+        class: 'bg-red-100 text-red-800',
+      };
+    }
+
+    // Due today
+    if (diffDays === 0) {
+      return {
+        label: 'Due today',
+        class: 'bg-orange-100 text-orange-800',
+      };
+    }
+
+    // Due tomorrow
+    if (diffDays === 1) {
+      return {
+        label: 'Due tomorrow',
+        class: 'bg-yellow-100 text-orange-800',
+      };
+    }
+
+    // Future
+    return {
+      label: `${diffDays} day${diffDays > 1 ? 's' : ''} left`,
+      class: 'bg-green-100 text-green-800',
+    };
+  }
+
+  getCommentCount(task: Task): number {
+    if (!task.comments || !task.comments.length) return 0;
+
+    return task.comments.filter((c) => c.message?.trim()).length;
   }
 
   /* ================= INIT ================= */

@@ -44,7 +44,13 @@ export class TaskService {
     }
   }
 
-  createTask(data: { title: string; description?: string; assigned_user_id?: number | null }) {
+  createTask(data: {
+    title: string;
+    description?: string;
+    assigned_user_id?: number | null;
+    deadline?: string | null;
+    comment?: string | null;
+  }) {
     return firstValueFrom(
       this.api.post('tasks', data).pipe(
         catchError((error: HttpErrorResponse) => {
@@ -54,9 +60,13 @@ export class TaskService {
     );
   }
 
-  updateTask(id: number, data: { title: string; description?: string }, version: number) {
+  updateTask(
+    id: number,
+    data: { title: string; description?: string; deadline: string | null },
+    version: number,
+  ) {
     return firstValueFrom(
-      this.api.put(`tasks/${id}`, { ...data, version }).pipe(
+      this.api.patch(`tasks/${id}`, { ...data, version }).pipe(
         catchError((error: HttpErrorResponse) => {
           return this.handleHttpError(error);
         }),
@@ -64,14 +74,30 @@ export class TaskService {
     );
   }
 
-  updateTaskStatusxx(id: number, data: { status: string; version: number }) {
-    return firstValueFrom(
-      this.api.put(`tasks/${id}/status`, { ...data }).pipe(
-        catchError((error: HttpErrorResponse) => {
-          return this.handleHttpError(error);
-        }),
-      ),
-    );
+  async getTaskById(id: number): Promise<Task> {
+    try {
+      const response = await firstValueFrom(
+        this.api
+          .get<{ success: boolean; message: string; data: Task }>(`tasks/${id}`)
+          .pipe(catchError((error: HttpErrorResponse) => this.handleHttpError(error))),
+      );
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
+  async addComment(taskId: number, data: { message: string; version?: number }) {
+    try {
+      if (!data.message.trim()) return;
+      await firstValueFrom(
+        this.api
+          .patch(`tasks/${taskId}`, { newComment: data.message, version: data.version })
+          .pipe(catchError((error: HttpErrorResponse) => this.handleHttpError(error))),
+      );
+    } catch (error) {
+      throw error;
+    }
   }
 
   updateTaskStatus(id: number, data: { status: string; version: number }) {

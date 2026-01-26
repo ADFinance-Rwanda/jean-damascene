@@ -1,0 +1,169 @@
+<div class="mx-auto p-6" *ngIf="!isLoading(); else loadingTpl">
+  <!-- Back button -->
+  <button (click)="back()" class="text-sm text-blue-600 mb-6 hover:underline transition-colors">
+    ← Back to tasks
+  </button>
+
+  <div *ngIf="task() as t; else noTask" class="bg-white rounded-xl shadow-md p-8 space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+      <div>
+        <div class="flex items-center gap-3 mb-2">
+          <h2 class="text-3xl font-bold text-gray-900">{{ t.title }}</h2>
+          <span
+            class="px-3 py-1 rounded-full text-xs font-medium"
+            [ngClass]="{
+              'bg-blue-100 text-blue-800': t.status === 'OPEN',
+              'bg-yellow-100 text-yellow-800': t.status === 'IN_PROGRESS',
+              'bg-green-100 text-green-800': t.status === 'DONE',
+            }"
+          >
+            {{ t.status }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-700 mb-2">Description</h3>
+      <p class="bg-gray-50 p-4 rounded-lg text-gray-800">
+        {{ t.description || 'No description provided' }}
+      </p>
+    </div>
+
+    <!-- Deadline -->
+    <div *ngIf="t.deadline">
+      <h3 class="text-sm font-semibold text-gray-700 mb-2">Deadline</h3>
+
+      <div class="bg-gray-50 p-4 rounded-lg space-y-2">
+        <div class="flex items-center gap-2 text-sm text-gray-600">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              x="1.5"
+              y="3.5"
+              width="13"
+              height="11"
+              rx="1.5"
+              stroke="currentColor"
+              fill="none"
+            />
+            <rect x="3" y="1" width="2" height="3" rx="1" fill="currentColor" />
+            <rect x="11" y="1" width="2" height="3" rx="1" fill="currentColor" />
+            <path d="M1.5 6H14.5" stroke="currentColor" stroke-linecap="round" />
+            <rect x="4.5" y="8" width="2" height="2" rx="0.5" fill="currentColor" />
+            <rect x="4.5" y="11" width="2" height="2" rx="0.5" fill="currentColor" />
+            <rect x="7.5" y="8" width="2" height="2" rx="0.5" fill="currentColor" />
+            <rect x="7.5" y="11" width="2" height="2" rx="0.5" fill="currentColor" />
+            <rect x="10.5" y="8" width="2" height="2" rx="0.5" fill="currentColor" />
+          </svg>
+          <p class="text-lg font-medium text-gray-900">
+            {{ formatDeadline(t.deadline!) }}
+          </p>
+        </div>
+
+        <p
+          class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium"
+          [ngClass]="getRemainingInfo(t.deadline!).class"
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle cx="6" cy="6" r="5.5" stroke="currentColor" fill="none" />
+            <path
+              d="M6 3V6L8 7.5"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              fill="none"
+            />
+          </svg>
+          {{ getRemainingInfo(t.deadline!).label }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Assigned To -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-700 mb-2">Assigned To</h3>
+      <p class="bg-gray-50 p-4 rounded-lg text-gray-800">
+        {{ t.assignedUser?.name || 'Unassigned' }}
+      </p>
+    </div>
+
+    <!-- Comments Section -->
+    <div class="border-t pt-6 space-y-4">
+      <h3 class="text-sm font-semibold text-gray-700">Comments ({{ t.comment?.length || 0 }})</h3>
+
+      <div *ngIf="t.comment?.length; else noComments" class="space-y-3">
+        <div *ngFor="let c of t.comment" class="bg-gray-50 p-4 rounded-lg">
+          <div class="flex items-start gap-3 mb-2">
+            <div
+              class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-medium"
+            >
+              {{ initials(c.user) }}
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-gray-900">{{ c.user }}</p>
+              <p class="text-xs text-gray-500">
+                {{ c.createdAt | date: 'medium' }}
+              </p>
+              <p class="text-sm text-gray-700 mt-1">{{ c.message }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noComments>
+        <p class="text-gray-500 text-center py-4">No comments yet</p>
+      </ng-template>
+
+      <!-- Add comment -->
+      <div class="flex gap-2 mt-2">
+        <input
+          [(ngModel)]="newComment"
+          placeholder="Add a comment..."
+          class="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          (click)="addComment()"
+          [disabled]="!newComment().trim()"
+          class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #noTask>
+  <div class="flex flex-col items-center justify-center py-24 text-center space-y-4">
+    <div class="text-gray-400 text-5xl">📄</div>
+
+    <h2 class="text-xl font-semibold text-gray-800">Task not found</h2>
+
+    <p class="text-gray-500">The task you’re looking for doesn’t exist or was removed.</p>
+
+    <button
+      (click)="back()"
+      class="mt-2 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+    >
+      Back to tasks
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #loadingTpl>
+  <p class="text-center py-20 text-gray-500">Loading…</p>
+</ng-template>

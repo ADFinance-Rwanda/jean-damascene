@@ -46,23 +46,17 @@ export const getAllTasksController = asyncHandler(async (req, res) => {
 
 /* ================= Get single task by ID ===============*/
 export const getTaskByIdController = asyncHandler(async (req, res) => {
-    const task = await getTaskById(req.params.id);
+    const task = await getTaskById(req.params.id, req.user);
     return sendSuccess(res, task, 'Task retrieved successfully');
 });
 
 /* ================= Update task details (title, description)===============*/
 
-// export const updateTaskController = asyncHandler(async (req, res) => {
-//     const { title, description, newComment } = toUpdateTaskByIdDto(req.body);
-//     const task = await updateTask(req.params.id, { title, description, newComment }, req.body.version, req.user);
-//     return sendSuccess(res, task, 'Task updated successfully');
-// });
-
 export const updateTaskController = asyncHandler(async (req, res) => {
-    const { title, description, newComment } = toUpdateTaskByIdDto(req.body);
+    const { title, description, newComment, deadline } = toUpdateTaskByIdDto(req.body);
     const task = await updateTask(
         req.params.id,
-        { title, description, newComment },
+        { title, description, newComment, deadline },
         req.body.version,
         req.user
     );

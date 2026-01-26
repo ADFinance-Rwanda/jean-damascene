@@ -26,9 +26,9 @@ export const toUpdateTaskDto = (body) => {
 
 
 export const toUpdateTaskByIdDto = (body) => {
-    const { title, description, newComment } = body;
+    const { title, description, newComment, deadline } = body;
 
-    return { title, description, newComment };
+    return { title, description, newComment, deadline };
 };
 
 export const toAssignTaskDto = (body) => {

@@ -7,73 +7,14 @@ import { createNotification } from './notificationService.js';
 
 
 /* ================= Create Task =============== */
-
-// export const createTask = async (title, description, created_by, assigned_user_id = null, deadline) => {
-//     const client = await pool.connect();
-//     let task;
-
-//     try {
-//         await client.query('BEGIN');
-
-//         const { rows } = await client.query(
-//             `INSERT INTO tasks(title, description, created_by, assigned_user_id, deadline)
-//              VALUES($1, $2, $3, $4, $5)
-//              RETURNING *`,
-//             [title, description, created_by, assigned_user_id, deadline]
-//         );
-
-//         task = rows[0];
-
-//         await client.query(
-//             `INSERT INTO activity_logs(task_id, action_type, old_value, new_value)
-//              VALUES($1, 'CREATE_TASK', NULL, $2)`,
-//             [task.id, JSON.stringify({ title: task.title })]
-//         );
-
-//         await client.query('COMMIT');
-//     } catch (e) {
-//         await client.query('ROLLBACK');
-//         throw e;
-//     } finally {
-//         client.release();
-//     }
-
-//     // 🔔 Notification
-//     if (assigned_user_id) {
-//         const notif = await createNotification(
-//             assigned_user_id,
-//             'task_assigned',
-//             `You have been assigned to task "${task.title}"`,
-//             task.id
-//         );
-
-//         emitNotification({
-//             userId: assigned_user_id,
-//             notification: notif
-//         });
-//     }
-
-//     // 📡 Socket task event
-//     emitTaskEvent({
-//         type: 'task_created',
-//         taskId: task.id,
-//         actor: { id: created_by },
-//         payload: task,
-//         toAll: true,
-//         // targetUsers: [created_by, assigned_user_id]
-//     });
-
-//     return task;
-// };
-
 export const createTask = async (
     title,
     description,
     created_by,
     assigned_user_id = null,
     deadline,
-    initialComment = null, // can be string or object
-    currentUser = null     // for user info
+    initialComment = null,
+    currentUser = null
 ) => {
     const client = await pool.connect();
     let task;
@@ -249,7 +190,7 @@ export const getAllTasks = async (user) => {
  * Get a single task by ID, including activity logs
  */
 
-export const getTaskById = async (id) => {
+export const getTaskByIdkkk = async (id) => {
     const { rows: taskRows } = await pool.query(
         `SELECT t.*, u.name AS assigned_user_name, u.email AS assigned_user_email
          FROM tasks t
@@ -266,7 +207,7 @@ export const getTaskById = async (id) => {
         try {
             return typeof c === 'string' ? JSON.parse(c) : c;
         } catch {
-            return c; // fallback in case parsing fails
+            return c;
         }
     });
 
@@ -330,6 +271,100 @@ export const getTaskById = async (id) => {
     return task;
 };
 
+export const getTaskById = async (id, user) => {
+    const isAdmin = user.role === 'ADMIN';
+
+    const { rows: taskRows } = await pool.query(
+        `
+        SELECT 
+          t.*,
+          u.name AS assigned_user_name,
+          u.email AS assigned_user_email
+        FROM tasks t
+        LEFT JOIN users u ON t.assigned_user_id = u.id
+        WHERE t.id=$1
+          AND ($2::boolean = TRUE OR t.assigned_user_id = $3)
+        `,
+        [id, isAdmin, user.id]
+    );
+
+    if (!taskRows.length) throw new AppError('Task not found', 404);
+
+    const task = taskRows[0];
+
+    // ✅ Ensure comment field is always an array of objects
+    task.comment = (task.comment || []).map(c => {
+        try {
+            return typeof c === 'string' ? JSON.parse(c) : c;
+        } catch {
+            return c;
+        }
+    });
+
+    // Get activity logs
+    const { rows: activityLogs } = await pool.query(
+        `SELECT id, action_type, old_value, new_value, created_at
+         FROM activity_logs 
+         WHERE task_id=$1 
+         ORDER BY created_at DESC`,
+        [id]
+    );
+
+    // If there are any ASSIGN_USER actions, fetch user names
+    const assignUserLogs = activityLogs.filter(log => log.action_type === 'ASSIGN_USER');
+
+    if (assignUserLogs.length > 0) {
+        const userIds = new Set();
+        assignUserLogs.forEach(log => {
+            if (log.old_value) userIds.add(parseInt(log.old_value));
+            if (log.new_value) userIds.add(parseInt(log.new_value));
+        });
+
+        if (userIds.size > 0) {
+            const { rows: users } = await pool.query(
+                `SELECT id, name FROM users WHERE id = ANY($1)`,
+                [Array.from(userIds)]
+            );
+
+            const userMap = new Map(users.map(user => [user.id.toString(), user.name]));
+
+            task.activity_logs = activityLogs.map(log => {
+                if (log.action_type === 'ASSIGN_USER') {
+                    return {
+                        ...log,
+                        old_value: log.old_value
+                            ? (userMap.get(log.old_value) || `User #${log.old_value}`)
+                            : 'Unassigned',
+                        new_value: log.new_value
+                            ? (userMap.get(log.new_value) || `User #${log.new_value}`)
+                            : 'Unassigned'
+                    };
+                }
+                return log;
+            });
+        } else {
+            task.activity_logs = activityLogs;
+        }
+    } else {
+        task.activity_logs = activityLogs;
+    }
+
+    // Format status values for STATUS_CHANGE actions
+    task.activity_logs = task.activity_logs.map(log => {
+        if (log.action_type === 'STATUS_CHANGE') {
+            return {
+                ...log,
+                old_value: formatStatus(log.old_value),
+                new_value: formatStatus(log.new_value)
+            };
+        }
+        return log;
+    });
+
+    return task;
+};
+
+
 const formatStatus = (status) => {
     if (!status) return 'N/A';
     return status
@@ -341,7 +376,7 @@ const formatStatus = (status) => {
 /**
  * Update task details (title, description) with activity logging
  */
-export const updateTask = async (id, { title, description, newComment }, version, currentUser) => {
+export const updateTask = async (id, { title, description, newComment, deadline }, version, currentUser) => {
     const client = await pool.connect();
 
     try {
@@ -372,14 +407,15 @@ export const updateTask = async (id, { title, description, newComment }, version
         // 4️⃣ Partial update: keep old values if not provided
         const updatedTitle = title ?? current.title;
         const updatedDescription = description ?? current.description;
+        const updatedDeadline = deadline ?? current.deadline;
 
         // 5️⃣ Update task
         const { rows } = await client.query(
             `UPDATE tasks
-             SET title=$1, description=$2, comment=$3, version=version+1, updated_at=NOW()
-             WHERE id=$4
+             SET title=$1, description=$2, deadline=$3, comment=$4, version=version+1, updated_at=NOW()
+             WHERE id=$5
              RETURNING *`,
-            [updatedTitle, updatedDescription, updatedComments, id]
+            [updatedTitle, updatedDescription, updatedDeadline, updatedComments, id]
         );
 
         // 6️⃣ Log activity

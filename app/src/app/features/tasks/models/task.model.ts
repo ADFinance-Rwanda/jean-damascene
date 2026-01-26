@@ -6,12 +6,20 @@ export interface TaskUser {
   email: string;
 }
 
+export interface TaskComment {
+  user: string;
+  message: string;
+  createdAt: string;
+}
+
 export interface Task {
   id: number;
   title: string;
   description?: string;
   status: TaskStatus;
   deadline?: string | null;
+  comments?: TaskComment[] | null;
+  comment?: TaskComment[] | null;
   assignedUser?: TaskUser | null;
   createdBy?: TaskUser | null;
 
