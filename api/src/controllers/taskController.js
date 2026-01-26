@@ -17,8 +17,9 @@ import {
 } from '../dtos/task.dto.js';
 
 /* ================= Create a new task ===============*/
+
 export const createTaskController = asyncHandler(async (req, res) => {
-    const { title, description, assigned_user_id } = toCreateTaskDto(req.body);
+    const { title, description, assigned_user_id, deadline, comment } = toCreateTaskDto(req.body);
 
     const created_by = req.user.id;
 
@@ -26,7 +27,10 @@ export const createTaskController = asyncHandler(async (req, res) => {
         title,
         description,
         created_by,
-        assigned_user_id
+        assigned_user_id,
+        deadline,
+        comment,
+        req.user
     );
 
     return sendSuccess(res, task, 'Task created successfully', 201);
@@ -47,17 +51,24 @@ export const getTaskByIdController = asyncHandler(async (req, res) => {
 });
 
 /* ================= Update task details (title, description)===============*/
+
 // export const updateTaskController = asyncHandler(async (req, res) => {
-//     const { title, description } = toUpdateTaskByIdDto(req.body);
-//     const task = await updateTask(req.params.id, { title, description }, req.body.version, req.user);
+//     const { title, description, newComment } = toUpdateTaskByIdDto(req.body);
+//     const task = await updateTask(req.params.id, { title, description, newComment }, req.body.version, req.user);
 //     return sendSuccess(res, task, 'Task updated successfully');
 // });
 
 export const updateTaskController = asyncHandler(async (req, res) => {
     const { title, description, newComment } = toUpdateTaskByIdDto(req.body);
-    const task = await updateTask(req.params.id, { title, description, newComment }, req.body.version, req.user);
+    const task = await updateTask(
+        req.params.id,
+        { title, description, newComment },
+        req.body.version,
+        req.user
+    );
     return sendSuccess(res, task, 'Task updated successfully');
 });
+
 
 /* ================= Update task status ===============*/
 export const updateTaskStatusController = asyncHandler(async (req, res) => {

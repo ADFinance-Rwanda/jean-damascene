@@ -11,7 +11,7 @@ export interface Task {
   title: string;
   description?: string;
   status: TaskStatus;
-
+  deadline?: string | null;
   assignedUser?: TaskUser | null;
   createdBy?: TaskUser | null;
 

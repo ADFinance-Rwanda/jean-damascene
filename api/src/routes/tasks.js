@@ -48,6 +48,11 @@ router.use(verifyUserToken);
  *               assigned_user_id:
  *                 type: integer
  *                 nullable: true
+ *               deadline:
+ *                 type: string
+ *                 format: date-time
+ *               comment:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Task created successfully
@@ -111,7 +116,7 @@ router.get('/:id', getTaskByIdController);
 /**
  * @swagger
  * /api/tasks/{id}:
- *   put:
+ *   patch:
  *     security:
  *       - BearerAuth: []
  *     summary: Update task details
@@ -133,6 +138,8 @@ router.get('/:id', getTaskByIdController);
  *                 type: string
  *               description:
  *                 type: string
+ *               newComment:
+ *                 type: string
  *               version:
  *                 type: integer
  *     responses:
@@ -143,10 +150,7 @@ router.get('/:id', getTaskByIdController);
  *             schema:
  *               $ref: '#/components/schemas/Task'
  */
-router.put('/:id',
-    // authorize("ADMIN"),
-    validate(['title', 'description']),
-    updateTaskController);
+router.patch('/:id', updateTaskController);
 
 /**
  * @swagger

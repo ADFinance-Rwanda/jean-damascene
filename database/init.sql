@@ -20,6 +20,7 @@ comment TEXT[],
 status task_status DEFAULT 'OPEN',
 assigned_user_id INT REFERENCES users(id),
 created_by INT NOT NULL REFERENCES users(id),
+deadline TIMESTAMP,
 version INT DEFAULT 1,
 created_at TIMESTAMP DEFAULT NOW(),
 updated_at TIMESTAMP DEFAULT NOW()

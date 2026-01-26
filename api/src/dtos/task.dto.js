@@ -1,5 +1,5 @@
 export const toCreateTaskDto = (body) => {
-    const { title, description, assigned_user_id } = body;
+    const { title, description, assigned_user_id, deadline, comment } = body;
 
     if (!title || !description) {
         throw new Error('Title and description are required');
@@ -8,7 +8,9 @@ export const toCreateTaskDto = (body) => {
     return {
         title,
         description,
-        assigned_user_id: assigned_user_id || null
+        assigned_user_id: assigned_user_id || null,
+        deadline,
+        comment: comment || []
     };
 };
 
@@ -25,10 +27,6 @@ export const toUpdateTaskDto = (body) => {
 
 export const toUpdateTaskByIdDto = (body) => {
     const { title, description, newComment } = body;
-
-    if (!title || !description) {
-        throw new Error('title and description are required');
-    }
 
     return { title, description, newComment };
 };
