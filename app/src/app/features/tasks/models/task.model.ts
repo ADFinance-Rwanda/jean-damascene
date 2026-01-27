@@ -22,7 +22,7 @@ export interface Task {
   comment?: TaskComment[] | null;
   assignedUser?: TaskUser | null;
   createdBy?: TaskUser | null;
-
+  assigned_user_name?: string | null;
   created_at: string;
   updated_at: string;
 

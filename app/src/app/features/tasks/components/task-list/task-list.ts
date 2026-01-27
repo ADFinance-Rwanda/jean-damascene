@@ -1,4 +1,13 @@
-import { Component, inject, signal, computed, OnInit, OnDestroy, effect } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  computed,
+  OnInit,
+  OnDestroy,
+  effect,
+  HostListener,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TaskService } from '../../services/task.service';
@@ -9,6 +18,7 @@ import { NotificationService } from '../../../../core/toastify';
 import { SocketService } from '../../../../core/sockets/SocketService';
 import { Subscription } from 'rxjs';
 import { RouterModule } from '@angular/router';
+import { AuthService } from '../../../auth/services/auth.service';
 
 type FilterStatus = 'ALL' | TaskStatus;
 
@@ -23,6 +33,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
   private userService = inject(UserService);
   private notify = inject(NotificationService);
   private socket = inject(SocketService);
+  public auth = inject(AuthService);
 
   private subscriptions: Subscription[] = [];
   private listenersInitialized = false; // prevent duplicate listeners
@@ -30,6 +41,9 @@ export class TaskListComponent implements OnInit, OnDestroy {
   /* ================= DATA ================= */
   tasks = this.taskService.tasks;
   users = signal<User[]>([]);
+
+  // Signal to track which task dropdown is open
+  openDropdownId = signal<number | null>(null);
 
   /* ================= UI STATE ================= */
   isLoading = signal(true);
@@ -44,6 +58,25 @@ export class TaskListComponent implements OnInit, OnDestroy {
 
   setFilter(status: FilterStatus) {
     this.filterStatus.set(status);
+  }
+
+  /* ================= DROPDOWN MANAGEMENT ================= */
+  toggleDropdown(taskId: number, event: Event) {
+    event.stopPropagation();
+    this.openDropdownId.set(this.openDropdownId() === taskId ? null : taskId);
+  }
+
+  closeAllDropdowns() {
+    this.openDropdownId.set(null);
+  }
+
+  isDropdownOpen(taskId: number): boolean {
+    return this.openDropdownId() === taskId;
+  }
+
+  @HostListener('document:click')
+  onDocumentClick() {
+    this.closeAllDropdowns();
   }
 
   /* ================= SOCKET EFFECT ================= */
@@ -126,13 +159,12 @@ export class TaskListComponent implements OnInit, OnDestroy {
         description: this.newTaskDescription,
         assigned_user_id: this.newTaskAssignedTo,
         deadline: this.newTaskDeadline ? new Date(this.newTaskDeadline).toISOString() : null,
-
         comment: this.newTaskComment || null,
       });
 
       await this.taskService.loadTasks();
       this.closeCreateModal();
-
+      this.closeAllDropdowns();
       this.notify.success('Task created successfully!');
     } catch (error: any) {
       this.notify.errorAlert(error?.message || 'Failed to create task');
@@ -150,6 +182,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
     this.selectedUserId.set(task?.assignedUser?.id ?? null);
     this.assignError.set(null);
     this.showAssignModal.set(true);
+    this.closeAllDropdowns(); // Close dropdown when opening assign modal
   }
 
   closeAssignModal() {
@@ -175,9 +208,28 @@ export class TaskListComponent implements OnInit, OnDestroy {
   showEditModal = signal(false);
   editTask = signal<Task | null>(null);
 
+  // openEditModal(task: Task) {
+  //   this.editTask.set({ ...task });
+  //   this.showEditModal.set(true);
+  //   this.closeAllDropdowns();
+  // }
+
   openEditModal(task: Task) {
-    this.editTask.set({ ...task });
+    const taskCopy = { ...task };
+
+    if (taskCopy.deadline) {
+      const d = new Date(taskCopy.deadline);
+      // format in local YYYY-MM-DD
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0'); // months are 0-indexed
+      const dd = String(d.getDate()).padStart(2, '0');
+
+      taskCopy.deadline = `${yyyy}-${mm}-${dd}`;
+    }
+
+    this.editTask.set(taskCopy);
     this.showEditModal.set(true);
+    this.closeAllDropdowns();
   }
 
   closeEditModal() {
@@ -207,7 +259,6 @@ export class TaskListComponent implements OnInit, OnDestroy {
 
       await this.taskService.loadTasks();
       this.closeEditModal();
-
       this.notify.success('Task updated successfully!');
     } catch (error: any) {
       this.notify.errorAlert(error?.message || 'Failed to update task');
@@ -216,6 +267,8 @@ export class TaskListComponent implements OnInit, OnDestroy {
 
   /* ================= DELETE TASK ================= */
   async deleteTask(task: Task) {
+    this.closeAllDropdowns();
+
     const result = await this.notify.confirmDelete(task.title, 'task');
     if (!result.isConfirmed) return;
 
@@ -252,6 +305,13 @@ export class TaskListComponent implements OnInit, OnDestroy {
   }
 
   async updateTaskStatus(task: Task, status: TaskStatus, version: number) {
+    const result = await this.notify.confirm(
+      `Change status to ${status.replace('_', ' ')}?`,
+      'Confirm Status Change',
+    );
+
+    if (!result.isConfirmed) return;
+
     try {
       await this.taskService.updateTaskStatus(task.id, { status, version });
       await this.taskService.loadTasks();
@@ -307,6 +367,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
     this.showHistoryModal.set(true);
     this.historyTask.set(task);
     this.historyLoading.set(true);
+    this.closeAllDropdowns(); // Close dropdown when opening history
 
     try {
       const activities = await this.taskService.getTaskHistory(task.id);
@@ -407,7 +468,6 @@ export class TaskListComponent implements OnInit, OnDestroy {
         this.taskService.loadTasks(),
         this.userService.getUsers().then((u) => this.users.set(u)),
       ]);
-      // NG0203 fix: socketEffect runs at class level, no effect() inside ngOnInit
     } catch (error: any) {
       this.error.set('Failed to load tasks');
       this.notify.errorAlert(error?.message || 'Failed to load tasks and users');

@@ -1,4 +1,13 @@
-import { Component, OnInit, inject, signal, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  inject,
+  signal,
+  OnDestroy,
+  ViewChild,
+  ElementRef,
+  effect,
+} from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { TaskService } from '../../services/task.service';
 import { Task } from '../../models/task.model';
@@ -12,6 +21,27 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './task-detail.html',
 })
 export class TaskDetailComponent implements OnInit {
+  @ViewChild('commentsContainer') commentsContainer?: ElementRef<HTMLDivElement>;
+
+  scrollToBottom() {
+    setTimeout(() => {
+      const el = this.commentsContainer?.nativeElement;
+      if (el) {
+        el.scrollTop = el.scrollHeight;
+      }
+    });
+  }
+
+  constructor() {
+    effect(() => {
+      const count = this.getValidComments().length;
+
+      if (count > 0) {
+        this.scrollToBottom();
+      }
+    });
+  }
+
   private taskService = inject(TaskService);
   private route = inject(ActivatedRoute);
   redirectTimer?: any;
@@ -81,6 +111,10 @@ export class TaskDetailComponent implements OnInit {
 
   getAssignedUser() {
     return this.task()?.assignedUser?.name || 'Unassigned';
+  }
+
+  getValidComments() {
+    return (this.task()?.comment || []).filter((c) => !!c?.message);
   }
 
   getRemainingInfo(deadline?: string | Date | null) {

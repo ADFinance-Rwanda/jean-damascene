@@ -165,6 +165,7 @@
           </div>
 
           <button
+            *ngIf="auth.isAdmin()"
             (click)="openCreateModal()"
             class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
@@ -191,219 +192,151 @@
         <div *ngIf="!error()" class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div *ngFor="let task of filteredTasks()">
-              <a [routerLink]="['/task', task.id]" class="block">
-                <div
-                  class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
-                >
-                  <!-- Task Header -->
-                  <div class="flex justify-between items-start mb-3">
-                    <div class="flex-1">
-                      <h3 class="font-semibold text-gray-900 mb-1">{{ task.title }}</h3>
-                      <p class="text-sm text-gray-600 line-clamp-2">
-                        {{ task.description || 'No description' }}
-                      </p>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                      <button
-                        (click)="deleteTask(task)"
-                        class="text-gray-400 hover:text-red-600 transition-colors ml-2 p-1"
-                      >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          ></path>
-                        </svg>
-                      </button>
-                      <button
-                        (click)="openEditModal(task)"
-                        class="ml-auto text-xs text-gray-700 rounded-md transition-colors flex items-center gap-1"
-                      >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          ></path>
-                        </svg>
-                      </button>
-                    </div>
+              <div
+                class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+              >
+                <!-- Task Header -->
+                <div class="flex justify-between items-start mb-3">
+                  <div class="flex-1">
+                    <h3 class="font-semibold text-gray-900 mb-1">{{ task.title }}</h3>
+                    <p class="text-sm text-gray-600 line-clamp-2">
+                      {{ task.description || 'No description' }}
+                    </p>
                   </div>
 
-                  <!-- Status and Assignment -->
-                  <div class="flex items-center gap-2 mb-3">
-                    <span
-                      class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
-                      [ngClass]="getStatusClass(task.status)"
-                    >
-                      <span
-                        class="w-2 h-2 rounded-full"
-                        [ngClass]="getStatusDotClass(task.status)"
-                      ></span>
-                      {{ task.status.replace('_', ' ') }}
-                    </span>
-
-                    <span
-                      *ngIf="task.assignedUser"
-                      class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-purple-50 text-purple-700 border border-purple-200"
-                    >
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        ></path>
-                      </svg>
-                      {{ task.assignedUser?.name }}
-                    </span>
-
-                    <span
-                      *ngIf="getCommentCount(task) > 0"
-                      class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-zinc-100 text-zinc-600 border border-purple-200"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 12 12"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M2.5 1.5H9.5C10.0523 1.5 10.5 1.94772 10.5 2.5V7.5C10.5 8.05228 10.0523 8.5 9.5 8.5H5.5L3.5 10.5V8.5H2.5C1.94772 8.5 1.5 8.05228 1.5 7.5V2.5C1.5 1.94772 1.94772 1.5 2.5 1.5Z"
-                          stroke="currentColor"
-                          stroke-linejoin="round"
-                          fill="none"
-                        />
-                      </svg>
-
-                      {{ getCommentCount(task) }}
-                      {{ getCommentCount(task) === 1 ? 'Comment' : 'Comments' }}
-                    </span>
-                  </div>
-
-                  <div class="flex items-center gap-2 mb-4 text-sm text-gray-600">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <rect
-                        x="1.5"
-                        y="3.5"
-                        width="13"
-                        height="11"
-                        rx="1.5"
-                        stroke="currentColor"
-                        fill="none"
-                      />
-                      <rect x="3" y="1" width="2" height="3" rx="1" fill="currentColor" />
-                      <rect x="11" y="1" width="2" height="3" rx="1" fill="currentColor" />
-                      <path d="M1.5 6H14.5" stroke="currentColor" stroke-linecap="round" />
-                      <rect x="4.5" y="8" width="2" height="2" rx="0.5" fill="currentColor" />
-                      <rect x="4.5" y="11" width="2" height="2" rx="0.5" fill="currentColor" />
-                      <rect x="7.5" y="8" width="2" height="2" rx="0.5" fill="currentColor" />
-                      <rect x="7.5" y="11" width="2" height="2" rx="0.5" fill="currentColor" />
-                      <rect x="10.5" y="8" width="2" height="2" rx="0.5" fill="currentColor" />
-                    </svg>
-                    <span>
-                      Deadline:
-                      <span class="font-semibold text-gray-700">
-                        {{ task.deadline ? (task.deadline | date: 'MMM dd, yyyy') : 'No deadline' }}
-                      </span>
-                    </span>
-                  </div>
-
-                  <!-- Task Actions -->
-                  <div class="flex items-center justify-between mt-2">
-                    <div class="flex gap-2 items-center">
-                      <!-- STATUS BUTTONS -->
-                      <button
-                        *ngIf="getPrevStatus(task.status)"
-                        (click)="updateTaskStatus(task, getPrevStatus(task.status)!, task.version)"
-                        class="text-xs px-3 py-2 bg-gray-200 rounded"
-                      >
-                        ← {{ getPrevStatus(task.status)?.replace('_', ' ') }}
-                      </button>
-
-                      <button
-                        *ngIf="getNextStatus(task.status)"
-                        (click)="updateTaskStatus(task, getNextStatus(task.status)!, task.version)"
-                        class="text-xs px-3 py-2 bg-blue-600 text-white rounded"
-                      >
-                        {{ getNextStatus(task.status)?.replace('_', ' ') }} →
-                      </button>
-
-                      <!-- ASSIGN USER -->
-                      <select
-                        class="px-2 py-2 border rounded text-sm max-w-40"
-                        [ngModel]="task.assignedUser?.id"
-                        (ngModelChange)="onAssignUser(task, $event)"
-                      >
-                        <option [ngValue]="null">Select to assign</option>
-                        <option *ngFor="let user of users()" [ngValue]="user.id">
-                          {{ user.name }}
-                        </option>
-                      </select>
-                    </div>
-
-                    <!-- HISTORY -->
+                  <!-- THREE DOT MENU -->
+                  <div class="relative">
                     <button
-                      class="text-xs px-4 py-2 border border-gray-300 text-gray-700 rounded flex gap-2"
-                      (click)="openHistory(task)"
+                      (click)="toggleDropdown(task.id, $event)"
+                      class="p-1 text-gray-700 hover:text-gray-900 text-xl"
                     >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        {...props}
-                      >
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                      </svg>
-                      History
+                      ⋮
                     </button>
-                  </div>
 
-                  <!-- Task Meta -->
-                  <div class="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                    <p class="text-xs text-gray-500">
-                      Created: {{ task.created_at | date: 'medium' }}
-                    </p>
-                    <p
-                      class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium"
-                      [ngClass]="getRemainingInfo(task.deadline).class"
+                    <div
+                      *ngIf="isDropdownOpen(task.id)"
+                      class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                      (click)="$event.stopPropagation()"
                     >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 12 12"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
+                      <button
+                        class="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-50 text-gray-700"
+                        [routerLink]="['/task', task.id]"
+                        (click)="closeAllDropdowns()"
                       >
-                        <circle cx="6" cy="6" r="5.5" stroke="currentColor" fill="none" />
-                        <path
-                          d="M6 3V6L8 7.5"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          fill="none"
-                        />
-                      </svg>
-                      {{ getRemainingInfo(task.deadline).label }}
-                    </p>
+                        👁 View details
+                      </button>
+
+                      <button
+                        *ngIf="auth.isAdmin() && task.status !== 'DONE'"
+                        (click)="openEditModal(task)"
+                        class="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-50 text-gray-700"
+                      >
+                        ✏️ Edit
+                      </button>
+
+                      <button
+                        *ngIf="auth.isAdmin() && task.status !== 'DONE'"
+                        (click)="deleteTask(task)"
+                        class="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        🗑 Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </a>
+
+                <!-- Status and Assignment -->
+                <div class="flex items-center gap-2 mb-3">
+                  <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
+                    [ngClass]="getStatusClass(task.status)"
+                  >
+                    <span
+                      class="w-2 h-2 rounded-full"
+                      [ngClass]="getStatusDotClass(task.status)"
+                    ></span>
+                    {{ task.status.replace('_', ' ') }}
+                  </span>
+
+                  <span
+                    *ngIf="task.assignedUser"
+                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-purple-50 text-purple-700 border border-purple-200"
+                  >
+                    {{ task.assignedUser?.name }}
+                  </span>
+
+                  <span
+                    *ngIf="getCommentCount(task) > 0"
+                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-zinc-100 text-zinc-600 border border-purple-200"
+                  >
+                    {{ getCommentCount(task) }}
+                    {{ getCommentCount(task) === 1 ? 'Comment' : 'Comments' }}
+                  </span>
+                </div>
+
+                <!-- Deadline -->
+                <div class="flex items-center gap-2 mb-4 text-sm text-gray-600">
+                  Deadline:
+                  <span class="font-semibold text-gray-700">
+                    {{ task.deadline ? (task.deadline | date: 'MMM dd, yyyy') : 'No deadline' }}
+                  </span>
+                </div>
+
+                <!-- Task Actions -->
+                <div class="flex items-center justify-between mt-2">
+                  <div class="flex gap-2 items-center">
+                    <button
+                      *ngIf="auth.isAdmin() && getPrevStatus(task.status)"
+                      (click)="updateTaskStatus(task, getPrevStatus(task.status)!, task.version)"
+                      class="text-xs px-3 py-2 bg-gray-200 rounded"
+                    >
+                      ← {{ getPrevStatus(task.status)?.replace('_', ' ') }}
+                    </button>
+
+                    <button
+                      *ngIf="getNextStatus(task.status)"
+                      (click)="updateTaskStatus(task, getNextStatus(task.status)!, task.version)"
+                      class="text-xs px-3 py-2 bg-blue-600 text-white rounded"
+                    >
+                      {{ getNextStatus(task.status)?.replace('_', ' ') }} →
+                    </button>
+
+                    <select
+                      *ngIf="auth.isAdmin()"
+                      class="px-2 py-2 border rounded text-sm max-w-40"
+                      [ngModel]="task.assignedUser?.id"
+                      (ngModelChange)="onAssignUser(task, $event)"
+                    >
+                      <option [ngValue]="null">Select to assign</option>
+                      <option *ngFor="let user of users()" [ngValue]="user.id">
+                        {{ user.name }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <button
+                    class="text-xs px-4 py-2 border border-gray-300 text-gray-700 rounded"
+                    (click)="openHistory(task)"
+                  >
+                    History
+                  </button>
+                </div>
+
+                <!-- Meta -->
+                <div class="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
+                  <p class="text-xs text-gray-500">
+                    Created: {{ task.created_at | date: 'medium' }}
+                  </p>
+
+                  <p
+                    *ngIf="task.status !== 'DONE'"
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium"
+                    [ngClass]="getRemainingInfo(task.deadline).class"
+                  >
+                    {{ getRemainingInfo(task.deadline).label }}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 

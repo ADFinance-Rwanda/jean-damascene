@@ -1,6 +1,6 @@
-<div class="max-w-7xl mx-auto p-4 md:p-6" *ngIf="!isLoading(); else loadingTpl">
+<div class="max-w-7xl mx-auto p-4" *ngIf="!isLoading(); else loadingTpl">
   <!-- Refined navigation -->
-  <nav class="mb-8">
+  <nav class="mb-5">
     <button
       (click)="back()"
       class="inline-flex items-center gap-2 group transition-all duration-200"
@@ -32,22 +32,13 @@
 
   <div
     *ngIf="task() as t; else noTask"
-    class="bg-white rounded-2xl shadow-subtle p-6 md:p-10 space-y-10"
+    class="bg-white rounded-2xl shadow-subtle p-6 md:p-10 space-y-6"
   >
     <!-- Header section -->
     <header class="space-y-6">
       <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div class="flex-1">
-          <div class="flex items-center gap-3 mb-3">
-            <span
-              class="text-xs font-medium text-gray-500 uppercase tracking-wider px-3 py-1 bg-gray-50 rounded-full"
-            >
-              Task
-            </span>
-            <span class="text-xs text-gray-400">•</span>
-            <span class="text-xs text-gray-500"> ID: #{{ t.id || '--' }} </span>
-          </div>
-          <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight mb-4">
+          <h1 class="text-2xl font-semibold text-gray-900 tracking-tight mb-2">
             {{ t.title }}
           </h1>
         </div>
@@ -73,9 +64,6 @@
             ></span>
             {{ t.status | titlecase }}
           </span>
-          <span class="text-xs text-gray-500 text-right lg:text-left">
-            Updated {{ t.updated_at || t.created_at | date: 'MMM d, yyyy' }}
-          </span>
         </div>
       </div>
     </header>
@@ -88,7 +76,7 @@
         <div
           class="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-100 p-6 shadow-subtle"
         >
-          <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center justify-between mb-2">
             <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <svg
                 class="w-5 h-5 text-gray-400"
@@ -133,19 +121,23 @@
                   d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
                 />
               </svg>
-              Comments
+              {{ getValidComments().length === 1 ? 'Comment' : 'Comments' }}
               <span
                 class="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full text-xs font-medium"
               >
-                {{ t.comment && t.comment.length ? t.comment.length : 0 }}
+                {{ getValidComments().length }}
               </span>
             </h2>
           </div>
 
           <!-- Comments list -->
-          <div *ngIf="t.comment && t.comment.length; else noComments" class="space-y-4">
+          <div
+            #commentsContainer
+            *ngIf="getValidComments().length; else noComments"
+            class="space-y-4 h-64 overflow-y-auto pr-2"
+          >
             <div
-              *ngFor="let c of t.comment"
+              *ngFor="let c of getValidComments()"
               class="border-l-4 border-blue-100 pl-4 py-3 hover:border-blue-200 transition-colors"
             >
               <div class="flex items-start gap-3">
@@ -200,11 +192,7 @@
                 class="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 transition-all duration-200 resize-none bg-white shadow-xs"
               ></textarea>
               <div class="flex items-center justify-between">
-                <p class="text-xs text-gray-500">
-                  Press
-                  <kbd class="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">Enter</kbd> to
-                  send
-                </p>
+                <span></span>
                 <button
                   (click)="addComment()"
                   [disabled]="!newComment()?.trim()"
@@ -269,7 +257,7 @@
                 </p>
               </div>
             </div>
-            <div class="pt-4 border-t border-gray-100">
+            <div *ngIf="t.status !== 'DONE'" class="pt-4 border-t border-gray-100">
               <div class="flex items-center justify-between">
                 <span
                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium"
@@ -316,8 +304,8 @@
             <div
               class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-base font-bold shadow-sm flex-shrink-0"
             >
-              <span *ngIf="t.assignedUser && t.assignedUser.name; else unassigned">
-                {{ (t.assignedUser.name || '')[0] | uppercase }}
+              <span *ngIf="t.assigned_user_name; else unassigned" class="capitalize">
+                {{ initials(t.assigned_user_name) }}
               </span>
               <ng-template #unassigned>
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -332,20 +320,11 @@
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-base font-semibold text-gray-900 truncate mb-0.5">
-                {{ t.assignedUser && t.assignedUser.name ? t.assignedUser.name : 'Unassigned' }}
-              </p>
-              <p
-                *ngIf="t.assignedUser && t.assignedUser.email"
-                class="text-sm text-gray-500 truncate"
-              >
-                {{ t.assignedUser.email }}
-              </p>
-              <p *ngIf="!(t.assignedUser && t.assignedUser.email)" class="text-sm text-gray-400">
-                No user assigned
+                {{ t.assigned_user_name ? t.assigned_user_name : 'Unassigned' }}
               </p>
             </div>
           </div>
-          <div class="mt-4 pt-4 border-t border-gray-100">
+          <div *ngIf="t.status !== 'DONE'" class="mt-4 pt-4 border-t border-gray-100">
             <button
               class="w-full text-sm text-blue-600 hover:text-blue-700 font-medium py-2 hover:bg-blue-50 rounded-lg transition-colors"
             >
@@ -356,6 +335,7 @@
 
         <!-- Task actions -->
         <div
+          *ngIf="t.status !== 'DONE'"
           class="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-100 p-6 shadow-subtle"
         >
           <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Actions</h3>
@@ -372,19 +352,6 @@
                 />
               </svg>
               Edit task details
-            </button>
-            <button
-              class="w-full text-left text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-3 py-2.5 rounded-lg transition-colors flex items-center gap-2"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.5"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
-              Delete task
             </button>
           </div>
         </div>
