@@ -24,6 +24,9 @@ export class SocketService {
     this.socket = io(this.SERVER_URL, {
       auth: { token },
       transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
     });
 
     this.socket.on('connect', () => {
@@ -34,6 +37,10 @@ export class SocketService {
     this.socket.on('disconnect', () => {
       this.connected.set(false);
       console.log('🔴 Socket disconnected');
+    });
+
+    this.socket.on('connect_error', (err) => {
+      console.error('Socket error:', err.message);
     });
   }
 

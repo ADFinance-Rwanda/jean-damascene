@@ -2,12 +2,12 @@ import { Server } from "socket.io";
 import { decodeToken } from "../utils/token.js";
 import pool from "../db/pool.js";
 
-let io; // <- store Socket.IO instance globally
+let io; // global Socket.IO instance
 
 export const initSocket = (httpServer) => {
     io = new Server(httpServer, {
         cors: {
-            origin: "*", // Replace with your Angular URL: http://localhost:4200
+            origin: "*", // change to http://localhost:4200 in prod
             methods: ["GET", "POST"],
         },
     });
@@ -47,9 +47,13 @@ export const initSocket = (httpServer) => {
     io.on("connection", (socket) => {
         console.log(`User connected: ${socket.user?.id} (${socket.user?.name})`);
 
-        // Join personal room for notifications
-        if (socket.user) {
-            socket.join(`user_${socket.user.id}`);
+        // Personal room
+        socket.join(`user_${socket.user.id}`);
+
+        // 🔐 Admin room
+        if (socket.user.role === 'ADMIN') {
+            socket.join('admins');
+            console.log(`Admin joined admins room: ${socket.user.id}`);
         }
 
         socket.on("disconnect", () => {

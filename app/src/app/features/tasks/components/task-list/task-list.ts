@@ -92,32 +92,50 @@ export class TaskListComponent implements OnInit, OnDestroy {
 
   /* ================= SOCKET EVENTS ================= */
   private initSocketListeners() {
+    const user = this.auth.user();
+
+    if (!user) return;
+
     this.subscriptions.push(
       this.socket
         .onEvent<{ type: string; payload: Task | { id: number } }>('task:event')
         .subscribe((event) => {
           const { type, payload } = event;
+          const task = payload as Task;
 
           switch (type) {
             case 'task_created':
-              this.tasks.update((list) => [payload as Task, ...list]);
-              this.notify.success(`New task created: ${(payload as Task).title}`);
+              if (user.role === 'ADMIN' || task.assignedUser?.id === user.id) {
+                this.tasks.update((list) => [task, ...list]);
+                this.notify.success(`New task created: ${task.title}`);
+              }
               break;
 
             case 'task_updated':
-              this.tasks.update((list) =>
-                list.map((t) =>
-                  t.id === (payload as Task).id ? { ...t, ...(payload as Task) } : t,
-                ),
-              );
-              this.notify.info(`Task updated: ${(payload as Task).title}`);
+            case 'task_status_updated':
+            case 'task_assigned':
+              this.tasks.update((list) => {
+                const exists = list.find((t) => t.id === task.id);
+
+                if (user.role === 'ADMIN') {
+                  return exists
+                    ? list.map((t) => (t.id === task.id ? { ...t, ...task } : t))
+                    : [task, ...list];
+                }
+
+                if (task.assignedUser?.id === user.id) {
+                  return exists
+                    ? list.map((t) => (t.id === task.id ? { ...t, ...task } : t))
+                    : [task, ...list];
+                } else {
+                  // Task no longer assigned to me → remove
+                  return list.filter((t) => t.id !== task.id);
+                }
+              });
               break;
 
             case 'task_deleted':
-              this.tasks.update((list) =>
-                list.filter((t) => t.id !== (payload as { id: number }).id),
-              );
-              this.notify.warning(`Task deleted: ${(payload as { id: number }).id}`);
+              this.tasks.update((list) => list.filter((t) => t.id !== task.id));
               break;
           }
         }),
@@ -162,7 +180,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
         comment: this.newTaskComment || null,
       });
 
-      await this.taskService.loadTasks();
+      // await this.taskService.loadTasks();
       this.closeCreateModal();
       this.closeAllDropdowns();
       this.notify.success('Task created successfully!');
@@ -195,7 +213,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
 
     try {
       await this.taskService.assignTask(task.id, this.selectedUserId());
-      this.tasks.update((list) => [...list]);
+      // this.tasks.update((list) => [...list]);
       this.closeAssignModal();
       this.notify.success('Task assigned successfully!');
     } catch (error: any) {
@@ -257,7 +275,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
         task.version,
       );
 
-      await this.taskService.loadTasks();
+      // await this.taskService.loadTasks();
       this.closeEditModal();
       this.notify.success('Task updated successfully!');
     } catch (error: any) {
@@ -274,7 +292,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
 
     try {
       await this.taskService.deleteTask(task.id);
-      this.tasks.update((list) => list.filter((t) => t.id !== task.id));
+      // this.tasks.update((list) => list.filter((t) => t.id !== task.id));
       this.notify.success(`Task "${task.title}" deleted successfully!`);
     } catch (error: any) {
       this.notify.errorAlert(error?.message || 'Failed to delete task');
@@ -314,7 +332,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
 
     try {
       await this.taskService.updateTaskStatus(task.id, { status, version });
-      await this.taskService.loadTasks();
+      // await this.taskService.loadTasks();
       this.notify.success(`Task status changed to ${status.replace('_', ' ')}`);
     } catch (error: any) {
       if (error.message?.includes('optimistic lock')) {
@@ -344,7 +362,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
   async onAssignUser(task: Task, userId: string) {
     try {
       await this.taskService.assignTask(task.id, userId ? Number(userId) : null, task.version);
-      await this.taskService.loadTasks();
+      // await this.taskService.loadTasks();
 
       if (userId) {
         const user = this.users().find((u) => u.id === Number(userId));
