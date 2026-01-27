@@ -191,9 +191,9 @@
         <!-- Tasks Grid -->
         <div *ngIf="!error()" class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div *ngFor="let task of filteredTasks()">
+            <div *ngFor="let task of filteredTasks()" class="flex">
               <div
-                class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow flex flex-col flex-1"
               >
                 <!-- Task Header -->
                 <div class="flex justify-between items-start mb-3">
@@ -283,12 +283,15 @@
                 </div>
 
                 <!-- Task Actions -->
-                <div class="flex items-center justify-between mt-2">
-                  <div class="flex gap-2 items-center">
+                <div
+                  class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-2 gap-2 sm:gap-0"
+                >
+                  <!-- Left actions: Status buttons + assign -->
+                  <div class="flex flex-wrap gap-2 items-center">
                     <button
                       *ngIf="auth.isAdmin() && getPrevStatus(task.status)"
                       (click)="updateTaskStatus(task, getPrevStatus(task.status)!, task.version)"
-                      class="text-xs px-3 py-2 bg-gray-200 rounded"
+                      class="text-xs px-3 py-2 bg-gray-200 rounded whitespace-nowrap"
                     >
                       ← {{ getPrevStatus(task.status)?.replace('_', ' ') }}
                     </button>
@@ -296,14 +299,14 @@
                     <button
                       *ngIf="getNextStatus(task.status)"
                       (click)="updateTaskStatus(task, getNextStatus(task.status)!, task.version)"
-                      class="text-xs px-3 py-2 bg-blue-600 text-white rounded"
+                      class="text-xs px-3 py-2 bg-blue-600 text-white rounded whitespace-nowrap"
                     >
                       {{ getNextStatus(task.status)?.replace('_', ' ') }} →
                     </button>
 
                     <select
                       *ngIf="auth.isAdmin()"
-                      class="px-2 py-2 border rounded text-sm max-w-40"
+                      class="px-2 py-2 border rounded text-sm max-w-[150px] sm:max-w-[200px]"
                       [ngModel]="task.assignedUser?.id"
                       (ngModelChange)="onAssignUser(task, $event)"
                     >
@@ -314,12 +317,15 @@
                     </select>
                   </div>
 
-                  <button
-                    class="text-xs px-4 py-2 border border-gray-300 text-gray-700 rounded"
-                    (click)="openHistory(task)"
-                  >
-                    History
-                  </button>
+                  <!-- Right action: History -->
+                  <div class="flex justify-end">
+                    <button
+                      class="text-xs px-4 py-2 border border-gray-300 text-gray-700 rounded whitespace-nowrap"
+                      (click)="openHistory(task)"
+                    >
+                      History
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Meta -->

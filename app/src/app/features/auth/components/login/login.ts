@@ -1,13 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule, NgForm } from '@angular/forms';
-import { AuthService } from '../services/auth.service';
-import { NotificationService } from '../../../core/toastify';
+import { AuthService } from '../../services/auth.service';
+import { NotificationService } from '../../../../core/toastify';
 import { CommonModule } from '@angular/common';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './login.html',
 })
 export class LoginComponent {
@@ -18,6 +18,11 @@ export class LoginComponent {
   email = '';
   password = '';
   loading = signal(false);
+  showPassword = false;
+
+  togglePassword() {
+    this.showPassword = !this.showPassword;
+  }
 
   async login(form: NgForm) {
     if (form.invalid) {

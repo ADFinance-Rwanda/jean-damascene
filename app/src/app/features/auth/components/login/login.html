@@ -1,0 +1,167 @@
+<div class="min-h-screen flex items-center justify-center p-4" style="background: #2e3050">
+  <div class="relative">
+    <div class="flex items-center space-x-3 justify-center mx-auto flex-col mb-6">
+      <img src="/logo.png" alt="Task Tracker Logo" class="h-14 w-auto rounded-full object-cover" />
+      <span class="font-bold text-lg text-white mt-2">Task Tracker</span>
+    </div>
+
+    <div class="relative">
+      <div
+        class="absolute inset-0 bg-black opacity-50 rounded-t-full transform translate-y-3"
+        style="border-radius: 200px 200px 18px 18px / 100px 100px 18px 18px"
+      ></div>
+
+      <div
+        class="relative px-8 md:px-12 pt-9 pb-12 w-[340px] md:w-[370px]"
+        style="
+          background: linear-gradient(180deg, #ececec 0%, #dcdcdc 100%);
+          border-radius: 200px 200px 18px 18px / 100px 100px 18px 18px;
+          box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+        "
+      >
+        <h1
+          class="text-4xl font-bold text-center mb-10 md:mb-12"
+          style="color: #645384; font-weight: 700; letter-spacing: -0.02em"
+        >
+          Login
+        </h1>
+
+        <form #loginForm="ngForm" (ngSubmit)="login(loginForm)" class="space-y-5">
+          <div class="space-y-2">
+            <input
+              [(ngModel)]="email"
+              name="email"
+              type="email"
+              placeholder="Email"
+              required
+              class="w-full px-4 py-3 rounded-lg text-gray-800 placeholder-gray-500 text-sm border-none focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all duration-300"
+              style="background-color: #cfcfcf"
+              [class.focus:ring-purple-500]="!loginForm.submitted"
+              [class.focus:ring-red-400]="loginForm.submitted && !email"
+            />
+            <div
+              *ngIf="loginForm.submitted && !email"
+              class="text-red-500 text-xs mt-1 ml-1 flex items-center gap-1 animate-fadeIn"
+            >
+              <svg
+                class="w-3 h-3 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Email is required
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="relative">
+              <input
+                [(ngModel)]="password"
+                name="password"
+                [type]="showPassword ? 'text' : 'password'"
+                placeholder="Password"
+                required
+                class="w-full px-4 py-3 pr-10 rounded-lg text-gray-800 placeholder-gray-500 text-sm border-none focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all duration-300"
+                style="background-color: #cfcfcf"
+                [class.focus:ring-purple-500]="!loginForm.submitted"
+                [class.focus:ring-red-400]="loginForm.submitted && !password"
+              />
+
+              <button
+                type="button"
+                (click)="togglePassword()"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                <svg
+                  *ngIf="!showPassword"
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
+
+                <svg
+                  *ngIf="showPassword"
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 012.042-3.368M6.223 6.223A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.543 7a9.978 9.978 0 01-4.132 5.411M15 12a3 3 0 00-3-3M3 3l18 18"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div
+              *ngIf="loginForm.submitted && !password"
+              class="text-red-500 text-xs mt-1 ml-1 flex items-center gap-1 animate-fadeIn"
+            >
+              Password is required
+            </div>
+
+            <div>
+              <a
+                routerLink="/forgot-password"
+                class="text-sm text-gray-600 hover:text-purple-600 transition-colors duration-200 cursor-pointer"
+              >
+                Forgot password?
+              </a>
+            </div>
+          </div>
+
+          <div class="pt-6">
+            <button
+              type="submit"
+              [disabled]="loading()"
+              class="w-full text-white font-semibold py-3 rounded-lg transition-all duration-300 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              style="background-color: #6d5c8f; font-size: 15px"
+            >
+              <span *ngIf="!loading()">Login</span>
+              <span *ngIf="loading()">Logging in...</span>
+              <svg *ngIf="loading()" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

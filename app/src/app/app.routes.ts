@@ -1,9 +1,16 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './features/auth/components/login';
+import { LoginComponent } from './features/auth/components/login/login';
 import { authGuard } from './core/auth/auth.guard';
 import { TaskDetailComponent } from './features/tasks/components/task-detail/task-detail';
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./features/auth/components/forgot-password/forgot-password').then(
+        (m) => m.ForgotPasswordComponent,
+      ),
+  },
 
   {
     path: '',
