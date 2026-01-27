@@ -51,10 +51,41 @@ export class TaskListComponent implements OnInit, OnDestroy {
 
   /* ================= FILTER ================= */
   filterStatus = signal<FilterStatus>('ALL');
+
   filteredTasks = computed(() => {
     const status = this.filterStatus();
-    return status === 'ALL' ? this.tasks() : this.tasks().filter((t) => t.status === status);
+    const search = this.searchQuery().toLowerCase();
+    const start = this.startDate() ? new Date(this.startDate()!) : null;
+    const end = this.endDate() ? new Date(this.endDate()!) : null;
+
+    return this.tasks().filter((task) => {
+      // Filter by status
+      if (status !== 'ALL' && task.status !== status) return false;
+
+      // Filter by search query (any field: title, description, assigned user)
+      if (search) {
+        const assignedName = task.assignedUser?.name?.toLowerCase() || '';
+        const matchesSearch =
+          task.title.toLowerCase().includes(search) ||
+          (task.description?.toLowerCase().includes(search) ?? false) ||
+          assignedName.includes(search);
+        if (!matchesSearch) return false;
+      }
+
+      // Filter by date range
+      if ((start || end) && task.created_at) {
+        const created = new Date(task.created_at);
+        if (start && created < start) return false;
+        if (end && created > end) return false;
+      }
+
+      return true;
+    });
   });
+
+  searchQuery = signal<string>(''); // text search
+  startDate = signal<string | null>(null); // yyyy-MM-dd
+  endDate = signal<string | null>(null);
 
   setFilter(status: FilterStatus) {
     this.filterStatus.set(status);
