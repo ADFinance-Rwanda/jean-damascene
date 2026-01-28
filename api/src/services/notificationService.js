@@ -39,14 +39,19 @@ export const getNotificationsByUser = async (userId, onlyUnread = false) => {
  * Mark notifications as read
  * @param {number[]} notificationIds
  */
-export const markNotificationsRead = async (notificationIds) => {
-    if (!notificationIds.length) return [];
+export const markNotificationsRead = async (notificationIds, userId) => {
+    if (!notificationIds?.length) return [];
+
     const { rows } = await pool.query(
         `UPDATE notifications
-         SET is_read = TRUE
-         WHERE id = ANY($1::int[])
-         RETURNING *`,
-        [notificationIds]
+     SET is_read = TRUE
+     WHERE id = ANY($1::int[])
+       AND user_id = $2
+     RETURNING *`,
+        [notificationIds, userId]
     );
+
+    console.log('Updated notifications:', rows); // debug
     return rows;
 };
+

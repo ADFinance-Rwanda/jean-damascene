@@ -1,8 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../../features/auth/services/auth.service';
 import { NgIf } from '@angular/common';
-import { Router } from '@angular/router';
+import { SocketService } from '../../../core/sockets/SocketService';
 
 @Component({
   selector: 'app-header',
@@ -10,41 +10,56 @@ import { Router } from '@angular/router';
   imports: [RouterLink, RouterLinkActive, NgIf],
   templateUrl: './header.html',
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit, OnDestroy {
   auth = inject(AuthService);
+  socket = inject(SocketService);
+  router = inject(Router);
+
   showDropdown = signal(false);
-  private router = inject(Router);
+  showNotifications = signal(false);
+
+  private boundClick = this.onDocumentClick.bind(this);
+
+  ngOnInit() {
+    // ❗ No manual socket.connect()
+    // SocketService auto-connects from AuthService token
+
+    document.addEventListener('click', this.boundClick);
+  }
+
+  ngOnDestroy() {
+    document.removeEventListener('click', this.boundClick);
+  }
 
   toggleDropdown() {
-    this.showDropdown.set(!this.showDropdown());
+    this.showDropdown.update((v) => !v);
+  }
+
+  toggleNotifications() {
+    this.showNotifications.update((v) => !v);
+
+    // If opening panel, mark all unread as read
+    if (this.showNotifications()) {
+      this.socket.markAllAsRead();
+    }
   }
 
   logout() {
     this.auth.logout();
+    this.socket.disconnect();
     this.router.navigate(['/login']);
   }
 
-  // Close dropdown when clicking outside
   onDocumentClick(event: MouseEvent) {
-    const dropdownElement = document.querySelector('.dropdown-container');
-    const buttonElement = document.querySelector('.dropdown-button');
+    const dropdown = document.querySelector('.dropdown-container');
+    const notif = document.querySelector('.notif-container');
 
-    if (
-      dropdownElement &&
-      buttonElement &&
-      !dropdownElement.contains(event.target as Node) &&
-      !buttonElement.contains(event.target as Node)
-    ) {
+    if (dropdown && !dropdown.contains(event.target as Node)) {
       this.showDropdown.set(false);
     }
-  }
 
-  // Initialize click outside listener
-  ngOnInit() {
-    document.addEventListener('click', this.onDocumentClick.bind(this));
-  }
-
-  ngOnDestroy() {
-    document.removeEventListener('click', this.onDocumentClick.bind(this));
+    if (notif && !notif.contains(event.target as Node)) {
+      this.showNotifications.set(false);
+    }
   }
 }

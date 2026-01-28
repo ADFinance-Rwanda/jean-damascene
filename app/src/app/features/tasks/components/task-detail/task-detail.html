@@ -134,7 +134,7 @@
           <div
             #commentsContainer
             *ngIf="getValidComments().length; else noComments"
-            class="space-y-4 h-64 overflow-y-auto pr-2"
+            class="space-y-4 max-h-64 overflow-y-auto pr-2"
           >
             <div
               *ngFor="let c of getValidComments()"
@@ -324,17 +324,17 @@
               </p>
             </div>
           </div>
-          <div *ngIf="t.status !== 'DONE'" class="mt-4 pt-4 border-t border-gray-100">
+          <!-- <div *ngIf="t.status !== 'DONE'" class="mt-4 pt-4 border-t border-gray-100">
             <button
               class="w-full text-sm text-blue-600 hover:text-blue-700 font-medium py-2 hover:bg-blue-50 rounded-lg transition-colors"
             >
               Reassign task
             </button>
-          </div>
+          </div> -->
         </div>
 
         <!-- Task actions -->
-        <div
+        <!-- <div
           *ngIf="t.status !== 'DONE'"
           class="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-100 p-6 shadow-subtle"
         >
@@ -354,7 +354,7 @@
               Edit task details
             </button>
           </div>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>

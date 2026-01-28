@@ -7,7 +7,6 @@ import { createNotification } from './notificationService.js';
 
 
 /* ================= Create Task =============== */
-/* ================= Create Task =============== */
 export const createTask = async (
     title,
     description,
@@ -23,7 +22,7 @@ export const createTask = async (
     try {
         await client.query('BEGIN');
 
-        // 1️⃣ Prepare comments array
+        // Prepare comments array
         const commentsArray = [];
         if (initialComment) {
             commentsArray.push({
@@ -36,7 +35,7 @@ export const createTask = async (
             });
         }
 
-        // 2️⃣ Insert task
+        // Insert task
         const { rows } = await client.query(
             `INSERT INTO tasks(title, description, created_by, assigned_user_id, deadline, comment)
        VALUES($1, $2, $3, $4, $5, $6)
@@ -46,11 +45,11 @@ export const createTask = async (
 
         task = rows[0];
 
-        // 3️⃣ Log activity
+        // Log activity
         await client.query(
             `INSERT INTO activity_logs(task_id, action_type, old_value, new_value)
        VALUES($1, 'CREATE_TASK', NULL, $2)`,
-            [task.id, JSON.stringify({ title: task.title, comment: task.comment })]
+            [task.id, JSON.stringify({ title: task.title })]
         );
 
         await client.query('COMMIT');
@@ -61,7 +60,7 @@ export const createTask = async (
         client.release();
     }
 
-    // 4️⃣ Re-fetch the task with formatted fields like getAllTasks
+    // Re-fetch the task with formatted fields like getAllTasks
     const { rows: formattedRows } = await pool.query(
         `
     SELECT 
@@ -95,7 +94,7 @@ export const createTask = async (
 
     const formattedTask = formattedRows[0];
 
-    // 5️⃣ Send notification if task is assigned
+    // Send notification if task is assigned
     if (assigned_user_id) {
         const notif = await createNotification(
             assigned_user_id,
@@ -119,8 +118,6 @@ export const createTask = async (
 
     return formattedTask;
 };
-
-
 
 /**
  * Get tasks with assigned user info, creator info, and metrics
@@ -248,7 +245,7 @@ export const getTaskById = async (id, user) => {
 
     const task = taskRows[0];
 
-    // ✅ Ensure comment field is always an array of objects
+    // Ensure comment field is always an array of objects
     task.comment = (task.comment || []).map(c => {
         try {
             return typeof c === 'string' ? JSON.parse(c) : c;
@@ -343,7 +340,7 @@ export const updateTask = async (
     try {
         await client.query('BEGIN');
 
-        // 1️⃣ Fetch current task
+        // Fetch current task
         const { rows: currentRows } = await client.query(
             'SELECT * FROM tasks WHERE id=$1',
             [id]
@@ -352,10 +349,10 @@ export const updateTask = async (
 
         const current = currentRows[0];
 
-        // 2️⃣ Version check
+        // Version check
         if (version !== current.version) throw new AppError('Conflict detected', 409);
 
-        // 3️⃣ Update comments
+        // Update comments
         const updatedComments = [...(current.comment || [])];
         if (newComment) {
             updatedComments.push({
@@ -365,12 +362,12 @@ export const updateTask = async (
             });
         }
 
-        // 4️⃣ Partial update
+        // Partial update
         const updatedTitle = title ?? current.title;
         const updatedDescription = description ?? current.description;
         const updatedDeadline = deadline ?? current.deadline;
 
-        // 5️⃣ Update task
+        // Update task
         await client.query(
             `UPDATE tasks
        SET title=$1, description=$2, deadline=$3, comment=$4, version=version+1, updated_at=NOW()
@@ -378,7 +375,7 @@ export const updateTask = async (
             [updatedTitle, updatedDescription, updatedDeadline, updatedComments, id]
         );
 
-        // 6️⃣ Log activity
+        // Log activity
         await client.query(
             `INSERT INTO activity_logs(task_id, action_type, old_value, new_value)
        VALUES($1, 'UPDATE_TASK', $2, $3)`,
@@ -387,7 +384,7 @@ export const updateTask = async (
 
         await client.query('COMMIT');
 
-        // 7️⃣ Re-fetch task in formatted structure like getAllTasks
+        // Re-fetch task in formatted structure like getAllTasks
         const { rows: formattedRows } = await pool.query(
             `
       SELECT 
@@ -421,7 +418,7 @@ export const updateTask = async (
 
         const updatedTask = formattedRows[0];
 
-        // 8️⃣ Notify assigned user if exists
+        // Notify assigned user if exists
         if (updatedTask.assignedUser?.id) {
             const notif = await createNotification(
                 updatedTask.assignedUser.id,
@@ -433,7 +430,7 @@ export const updateTask = async (
             emitNotification({ userId: updatedTask.assignedUser.id, notification: notif });
         }
 
-        // 9️⃣ Emit task update event (assigned user + broadcast admins)
+        // Emit task update event (assigned user + broadcast admins)
         emitTaskEvent({
             type: 'task_updated',
             taskId: updatedTask.id,
@@ -462,7 +459,7 @@ export const updateTaskStatus = async (id, status, version, currentUser = null) 
     try {
         await client.query('BEGIN');
 
-        // 1️⃣ Fetch current task
+        // Fetch current task
         const { rows: currentRows } = await client.query(
             `SELECT * FROM tasks WHERE id=$1`,
             [id]
@@ -480,10 +477,10 @@ export const updateTaskStatus = async (id, status, version, currentUser = null) 
             throw new AppError('Invalid status transition', 400);
         }
 
-        // 2️⃣ Version check
+        // Version check
         if (current.version !== version) throw new AppError('Conflict detected', 409);
 
-        // 3️⃣ Update status
+        // Update status
         await client.query(
             `UPDATE tasks
              SET status=$1, version=version+1, updated_at=NOW()
@@ -491,7 +488,7 @@ export const updateTaskStatus = async (id, status, version, currentUser = null) 
             [status, id]
         );
 
-        // 4️⃣ Activity log
+        // Activity log
         await client.query(
             `INSERT INTO activity_logs(task_id, action_type, old_value, new_value)
              VALUES($1, 'STATUS_CHANGE', $2, $3)`,
@@ -500,7 +497,7 @@ export const updateTaskStatus = async (id, status, version, currentUser = null) 
 
         await client.query('COMMIT');
 
-        // 5️⃣ Re-fetch formatted task (same as updateTask)
+        // Re-fetch formatted task (same as updateTask)
         const { rows: formattedRows } = await pool.query(
             `
             SELECT 
@@ -534,7 +531,7 @@ export const updateTaskStatus = async (id, status, version, currentUser = null) 
 
         const updatedTask = formattedRows[0];
 
-        // 6️⃣ Notify assigned user
+        // Notify assigned user
         if (updatedTask.assignedUser?.id) {
             const notif = await createNotification(
                 updatedTask.assignedUser.id,
@@ -549,7 +546,7 @@ export const updateTaskStatus = async (id, status, version, currentUser = null) 
             });
         }
 
-        // 7️⃣ Emit socket event (task room + admins + assigned)
+        // Emit socket event (task room + admins + assigned)
         emitTaskEvent({
             type: 'task_status_updated',
             taskId: updatedTask.id,
@@ -573,64 +570,6 @@ export const updateTaskStatus = async (id, status, version, currentUser = null) 
 /**
  * Assign task to user
  */
-export const assignTaskToUsersss = async (taskId, userId, version, currentUser) => {
-    const client = await pool.connect();
-
-    try {
-        await client.query('BEGIN');
-
-        const { rows: currentRows } = await client.query(
-            'SELECT * FROM tasks WHERE id=$1',
-            [taskId]
-        );
-        if (!currentRows.length) throw new AppError('Task not found', 404);
-
-        const current = currentRows[0];
-        if (current.version !== version) throw new AppError('Conflict detected', 409);
-
-        const { rows } = await client.query(
-            `UPDATE tasks
-             SET assigned_user_id=$1, version=version+1, updated_at=NOW()
-             WHERE id=$2 RETURNING *`,
-            [userId, taskId]
-        );
-
-        await client.query(
-            `INSERT INTO activity_logs(task_id, action_type, old_value, new_value)
-             VALUES($1, 'ASSIGN_USER', $2, $3)`,
-            [taskId, current.assigned_user_id, userId]
-        );
-
-        await client.query('COMMIT');
-
-        // 🔔 Notification
-        const notif = await createNotification(
-            userId,
-            'task_assigned',
-            `You were assigned to "${rows[0].title}" by ${currentUser.name}`,
-            taskId
-        );
-
-        emitNotification({ userId, notification: notif });
-
-        // 📡 Socket event
-        emitTaskEvent({
-            type: 'task_assigned',
-            taskId,
-            actor: { id: currentUser.id },
-            payload: rows[0],
-            targetUsers: [userId],
-            broadcastAdmins: true
-        });
-
-        return rows[0];
-    } catch (e) {
-        await client.query('ROLLBACK');
-        throw e;
-    } finally {
-        client.release();
-    }
-};
 
 export const assignTaskToUser = async (taskId, userId, version, currentUser) => {
     const client = await pool.connect();

@@ -138,7 +138,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
             case 'task_created':
               if (user.role === 'ADMIN' || task.assignedUser?.id === user.id) {
                 this.tasks.update((list) => [task, ...list]);
-                this.notify.success(`New task created: ${task.title}`);
+                // this.notify.success(`New task created: ${task.title}`);
               }
               break;
 
